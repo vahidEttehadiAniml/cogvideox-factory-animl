@@ -2,17 +2,19 @@
 
 MODEL_ID="THUDM/CogVideoX-2b"
 
-NUM_GPUS=8
+NUM_GPUS=1
 
 # For more details on the expected data format, please refer to the README.
-DATA_ROOT="/path/to/my/datasets/video-dataset"  # This needs to be the path to the base directory where your videos are located.
-CAPTION_COLUMN="prompt.txt"
-VIDEO_COLUMN="videos.txt"
-OUTPUT_DIR="/path/to/my/datasets/preprocessed-dataset"
-HEIGHT_BUCKETS="480 720"
-WIDTH_BUCKETS="720 960"
-FRAME_BUCKETS="49"
-MAX_NUM_FRAMES="49"
+DATA_ROOT="/media/vahid/DATA/data/animl_data/cogvid_preproc_sub"  # This needs to be the path to the base directory where your videos are located.
+CAPTION_COLUMN="sub_prompt.txt"
+VIDEO_COLUMN="sub_videos.txt"
+OUTPUT_DIR="/media/vahid/DATA/data/animl_data/cogvid_preproc_sub_latents"
+#HEIGHT_BUCKETS="480 720"
+#WIDTH_BUCKETS="720 960"
+HEIGHT_BUCKETS="480"
+WIDTH_BUCKETS="720"
+FRAME_BUCKETS="29"
+MAX_NUM_FRAMES="29"
 MAX_SEQUENCE_LENGTH=226
 TARGET_FPS=8
 BATCH_SIZE=1
@@ -38,7 +40,7 @@ CMD_WITHOUT_PRE_ENCODING="\
       --dtype $DTYPE
 "
 
-CMD_WITH_PRE_ENCODING="$CMD_WITHOUT_PRE_ENCODING --save_latents_and_embeddings"
+CMD_WITH_PRE_ENCODING="$CMD_WITHOUT_PRE_ENCODING --save_image_latents --save_latents_and_embeddings"
 
 # Select which you'd like to run
 CMD=$CMD_WITH_PRE_ENCODING

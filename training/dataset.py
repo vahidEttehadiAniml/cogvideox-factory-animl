@@ -124,10 +124,10 @@ class VideoDataset(Dataset):
             # The VAE's temporal compression ratio is 4.
             # The VAE's spatial compression ratio is 8.
             latent_num_frames = video_latents.size(1)
-            if latent_num_frames % 2 == 0:
-                num_frames = latent_num_frames * 4
-            else:
-                num_frames = (latent_num_frames - 1) * 4 + 1
+            # if latent_num_frames % 2 == 0:
+            #     num_frames = latent_num_frames * 4
+            # else:
+            num_frames = (latent_num_frames - 1) * 4 + 1
 
             height = video_latents.size(2) * 8
             width = video_latents.size(3) * 8
@@ -220,7 +220,17 @@ class VideoDataset(Dataset):
             frames = frames.permute(0, 3, 1, 2).contiguous()
             frames = torch.stack([self.video_transforms(frame) for frame in frames], dim=0)
 
-            image = frames[:1].clone() if self.image_to_video else None
+            # image = frames[:1].clone() if self.image_to_video else None
+            if self.image_to_video:
+                cond_path = str(path).replace('videos','conditions')
+                video_reader = decord.VideoReader(uri=Path(cond_path).as_posix())
+                video_num_frames = len(video_reader)
+
+                indices = list(range(0, video_num_frames, video_num_frames // self.max_num_frames))
+                cond_frames = video_reader.get_batch(indices)
+                cond_frames = cond_frames[: self.max_num_frames].float()
+                cond_frames = cond_frames.permute(0, 3, 1, 2).contiguous()
+                image = torch.stack([self.video_transforms(frame) for frame in cond_frames], dim=0)
 
             return image, frames, None
 
@@ -290,7 +300,23 @@ class VideoDatasetWithResizing(VideoDataset):
             frames_resized = torch.stack([resize(frame, nearest_res) for frame in frames], dim=0)
             frames = torch.stack([self.video_transforms(frame) for frame in frames_resized], dim=0)
 
-            image = frames[:1].clone() if self.image_to_video else None
+            # image = frames[:1].clone() if self.image_to_video else None
+            if self.image_to_video:
+                cond_path = str(path).replace('videos','conditions')
+                video_reader = decord.VideoReader(uri=Path(cond_path).as_posix())
+                video_num_frames = len(video_reader)
+                nearest_frame_bucket = min(
+                    self.frame_buckets, key=lambda x: abs(x - min(video_num_frames, self.max_num_frames))
+                )
+
+                frame_indices = list(range(0, video_num_frames, video_num_frames // nearest_frame_bucket))
+
+                cond_frames = video_reader.get_batch(frame_indices)
+                cond_frames = cond_frames[:nearest_frame_bucket].float()
+                cond_frames = cond_frames.permute(0, 3, 1, 2).contiguous()
+
+                cond_frames_resized = torch.stack([resize(frame, nearest_res) for frame in cond_frames], dim=0)
+                image = torch.stack([self.video_transforms(frame) for frame in cond_frames_resized], dim=0)
 
             return image, frames, None
 
@@ -355,7 +381,17 @@ class VideoDatasetWithResizeAndRectangleCrop(VideoDataset):
             frames_resized = self._resize_for_rectangle_crop(frames, nearest_res)
             frames = torch.stack([self.video_transforms(frame) for frame in frames_resized], dim=0)
 
-            image = frames[:1].clone() if self.image_to_video else None
+            # image = frames[:1].clone() if self.image_to_video else None
+            if self.image_to_video:
+                cond_path = str(path).replace('videos','conditions')
+                video_reader = decord.VideoReader(uri=Path(cond_path).as_posix())
+                video_num_frames = len(video_reader)
+
+                indices = list(range(0, video_num_frames, video_num_frames // self.max_num_frames))
+                cond_frames = video_reader.get_batch(indices)
+                cond_frames = cond_frames[: self.max_num_frames].float()
+                cond_frames = cond_frames.permute(0, 3, 1, 2).contiguous()
+                image = torch.stack([self.video_transforms(frame) for frame in cond_frames], dim=0)
 
             return image, frames, None
 

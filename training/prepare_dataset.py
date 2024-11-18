@@ -327,7 +327,8 @@ def serialize_artifacts(
     metadata = [{"num_frames": num_frames, "height": height, "width": width}]
 
     data_folder_mapper_list = [
-        (images, images_dir, lambda img, path: save_image(img[0], path), "png"),
+        (images, images_dir, functools.partial(save_video, fps=fps), "mp4"),
+        # (images, images_dir, lambda img, path: save_image(img[0], path), "png"),
         (image_latents, image_latents_dir, torch.save, "pt"),
         (videos, videos_dir, functools.partial(save_video, fps=fps), "mp4"),
         (video_latents, video_latents_dir, torch.save, "pt"),
