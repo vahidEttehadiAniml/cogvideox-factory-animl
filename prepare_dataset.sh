@@ -2,13 +2,13 @@
 
 MODEL_ID="THUDM/CogVideoX-2b"
 
-NUM_GPUS=1
+NUM_GPUS=8
 
 # For more details on the expected data format, please refer to the README.
-DATA_ROOT="/media/vahid/DATA/data/animl_data/cogvid_preproc_sub"  # This needs to be the path to the base directory where your videos are located.
-CAPTION_COLUMN="sub_prompt.txt"
-VIDEO_COLUMN="sub_videos.txt"
-OUTPUT_DIR="/media/vahid/DATA/data/animl_data/cogvid_preproc_sub_latents"
+DATA_ROOT="/mnt/data/cogvid_preproc_sub"  # This needs to be the path to the base directory where your videos are located.
+CAPTION_COLUMN="prompt.txt"
+VIDEO_COLUMN="videos.txt"
+OUTPUT_DIR="/mnt/data/cogvid_preproc_sub_latents"
 #HEIGHT_BUCKETS="480 720"
 #WIDTH_BUCKETS="720 960"
 HEIGHT_BUCKETS="480"
@@ -17,7 +17,7 @@ FRAME_BUCKETS="29"
 MAX_NUM_FRAMES="29"
 MAX_SEQUENCE_LENGTH=226
 TARGET_FPS=8
-BATCH_SIZE=1
+BATCH_SIZE=4
 DTYPE=fp32
 
 # To create a folder-style dataset structure without pre-encoding videos and captions

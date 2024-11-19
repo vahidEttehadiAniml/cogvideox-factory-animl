@@ -237,8 +237,10 @@ def run_validation(
     validation_prompts = args.validation_prompt.split(args.validation_prompt_separator)
     validation_images = args.validation_images.split(args.validation_prompt_separator)
     for validation_image, validation_prompt in zip(validation_images, validation_prompts):
+        all_frames = load_video(validation_image)
         pipeline_args = {
-            "images": load_video(validation_image),
+            "image": all_frames[0],
+            "frames": all_frames[1:],
             "prompt": validation_prompt,
             "guidance_scale": args.guidance_scale,
             "use_dynamic_cfg": args.use_dynamic_cfg,
@@ -745,9 +747,16 @@ def main(args):
                 video_latents = video_latents.permute(0, 2, 1, 3, 4)  # [B, F, C, H, W]
                 video_latents = video_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
 
-                # padding_shape = (video_latents.shape[0], video_latents.shape[1] - 1, *video_latents.shape[2:])
-                # latent_padding = image_latents.new_zeros(padding_shape)
-                # image_latents = torch.cat([image_latents, latent_padding], dim=1)
+                if args.use_noise_condition:
+                    padding_shape = (video_latents.shape[0], video_latents.shape[1] - 1, *video_latents.shape[2:])
+                    latent_padding = image_latents.new_zeros(padding_shape)
+                    image_latents = torch.cat([video_latents[:,:1], latent_padding], dim=1)
+                else:
+                    #### copy the first frames to conditions
+                    image_latents[:,0] = video_latents[:,0].clone()
+                    image_latents = image_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
+
+
 
                 if random.random() < args.noised_image_dropout:
                     image_latents = torch.zeros_like(image_latents)
@@ -778,6 +787,9 @@ def main(args):
                     dtype=torch.int64,
                     device=accelerator.device,
                 )
+
+                if args.use_noise_condition:
+                    noise = scheduler.add_noise(image_latents, noise, timesteps)
 
                 # Prepare rotary embeds
                 image_rotary_emb = (
@@ -957,8 +969,10 @@ def main(args):
             validation_prompts = args.validation_prompt.split(args.validation_prompt_separator)
             validation_images = args.validation_images.split(args.validation_prompt_separator)
             for validation_image, validation_prompt in zip(validation_images, validation_prompts):
+                all_frames = load_video(validation_image)
                 pipeline_args = {
-                    "images": load_video(validation_image),
+                    "image": all_frames[0],
+                    "frames": all_frames[1:],
                     "prompt": validation_prompt,
                     "guidance_scale": args.guidance_scale,
                     "use_dynamic_cfg": args.use_dynamic_cfg,

@@ -226,8 +226,10 @@ def run_validation(
     validation_prompts = args.validation_prompt.split(args.validation_prompt_separator)
     validation_images = args.validation_images.split(args.validation_prompt_separator)
     for validation_image, validation_prompt in zip(validation_images, validation_prompts):
+        all_frames = load_video(validation_image)
         pipeline_args = {
-            "images": load_video(validation_image),
+            "image": all_frames[0],
+            "frames": all_frames[1:],
             "prompt": validation_prompt,
             "guidance_scale": args.guidance_scale,
             "use_dynamic_cfg": args.use_dynamic_cfg,
@@ -711,6 +713,10 @@ def main(args):
                 video_latents = video_latents.permute(0, 2, 1, 3, 4)  # [B, F, C, H, W]
                 video_latents = video_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
 
+                #### copy the first frames to conditions
+                image_latents[:,0] = video_latents[:,0].clone()
+                image_latents = image_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
+
                 # padding_shape = (video_latents.shape[0], video_latents.shape[1] - 1, *video_latents.shape[2:])
                 # latent_padding = image_latents.new_zeros(padding_shape)
                 # image_latents = torch.cat([image_latents, latent_padding], dim=1)
@@ -918,8 +924,10 @@ def main(args):
             validation_prompts = args.validation_prompt.split(args.validation_prompt_separator)
             validation_images = args.validation_images.split(args.validation_prompt_separator)
             for validation_image, validation_prompt in zip(validation_images, validation_prompts):
+                all_frames = load_video(validation_image)
                 pipeline_args = {
-                    "images": load_video(validation_image),
+                    "image": all_frames[0],
+                    "frames": all_frames[1:],
                     "prompt": validation_prompt,
                     "guidance_scale": args.guidance_scale,
                     "use_dynamic_cfg": args.use_dynamic_cfg,

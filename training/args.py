@@ -339,6 +339,16 @@ def _get_training_args(parser: argparse.ArgumentParser) -> None:
             "otherwise. Please read the comments in https://github.com/a-r-r-o-w/cogvideox-factory/issues/26 to understand why."
         ),
     )
+    parser.add_argument(
+        "--use_noise_condition",
+        action="store_true",
+        default=False,
+        help=(
+            "Whether to ignore the learned positional embeddings when training CogVideoX Image-to-Video. This setting "
+            "should be used when performing multi-resolution training, because CogVideoX-I2V does not support it "
+            "otherwise. Please read the comments in https://github.com/a-r-r-o-w/cogvideox-factory/issues/26 to understand why."
+        ),
+    )
 
 
 def _get_optimizer_args(parser: argparse.ArgumentParser) -> None:

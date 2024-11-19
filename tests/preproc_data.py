@@ -1,10 +1,10 @@
 # from huggingface_hub import snapshot_download
 #
-# # model_path = 'checkpoints/sd3'   # The local directory to save downloaded checkpoint
-# # snapshot_download("rain1011/pyramid-flow-sd3", local_dir=model_path, local_dir_use_symlinks=False, repo_type='model')
-#
-# model_path = 'checkpoints/miniflux'   # The local directory to save downloaded checkpoint
-# snapshot_download("rain1011/pyramid-flow-miniflux", local_dir=model_path, local_dir_use_symlinks=False, repo_type='model')
+# model_path = '/media/vahid/DATA/projects/CogVideo/models/CogVideoX1.5-5B-I2V'   # The local directory to save downloaded checkpoint
+# snapshot_download("THUDM/CogVideoX1.5-5B-I2V", local_dir=model_path, local_dir_use_symlinks=False, repo_type='model')
+# #
+# # model_path = 'checkpoints/miniflux'   # The local directory to save downloaded checkpoint
+# # snapshot_download("rain1011/pyramid-flow-miniflux", local_dir=model_path, local_dir_use_symlinks=False, repo_type='model')
 
 import os, json, tqdm, cv2, glob
 import shutil
