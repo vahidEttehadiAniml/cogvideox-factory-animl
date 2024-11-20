@@ -43,7 +43,7 @@ for n in range(len(video_inp_lora), num_frames):
 # vae = AutoencoderKLCogVideoX.from_pretrained("THUDM/CogVideoX-5b-I2V", subfolder="vae", torch_dtype=torch.bfloat16)
 pipe = CogVideoXFramesToVideoPipeline.from_pretrained("/media/vahid/DATA/projects/CogVideo/models/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
 # pipe = CogVideoXVideoToVideoPipeline.from_pretrained("THUDM/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
-lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora__optimizer_adamw__steps_3000__lr-schedule_cosine_with_restarts__learning-rate_1e-3/checkpoint-1000"
+lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora__optimizer_adamw__steps_3000__lr-schedule_cosine_with_restarts__learning-rate_1e-3/checkpoint-2000"
 lora_rank = 256
 lora_alpha = 256
 lora_scaling = lora_alpha / lora_rank
@@ -61,9 +61,9 @@ image = load_image(img_path)
 # export_to_video(video.frames[0], "output_vid_reg_left_178_g8.mp4", fps=8)
 
 video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
-                          use_dynamic_cfg=True, num_inference_steps=50)
+                          use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=True)
 export_to_video(video.frames[0][:30], f"output_vid_gengs_{traj}_g5_50_6_lora_test.mp4", fps=8)
 
-video = pipe(image, frames=video_inp_lora[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
-                          use_dynamic_cfg=True, num_inference_steps=50)
-export_to_video(video.frames[0][:30], f"output_vid_lora_{traj}_g5_50_6_lora_test.mp4", fps=8)
+# video = pipe(image, frames=video_inp_lora[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
+#                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=True)
+# export_to_video(video.frames[0][:30], f"output_vid_lora_{traj}_g5_50_6_lora_test.mp4", fps=8)

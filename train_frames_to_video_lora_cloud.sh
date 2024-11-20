@@ -1,6 +1,6 @@
 export TORCH_LOGS="+dynamo,recompiles,graph_breaks"
 export TORCHDYNAMO_VERBOSE=1
-export WANDB_MODE="offline"
+#export WANDB_MODE="offline"
 export NCCL_P2P_DISABLE=1
 export TORCH_NCCL_ENABLE_MONITORING=0
 
@@ -11,7 +11,7 @@ GPU_IDS="0,1,2,3,4,5,6,7"
 LEARNING_RATES=("1e-3")
 LR_SCHEDULES=("cosine_with_restarts")
 OPTIMIZERS=("adamw")
-MAX_TRAIN_STEPS=("3000")
+MAX_TRAIN_STEPS=("4000")
 
 # Single GPU uncompiled training
 ACCELERATE_CONFIG_FILE="accelerate_configs/uncompiled_8.yaml"
@@ -38,8 +38,8 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --id_token BW_STYLE \
           --height_buckets 480 \
           --width_buckets 720 \
-          --frame_buckets 29 \
-          --dataloader_num_workers 8 \
+          --frame_buckets 17 \
+          --dataloader_num_workers 48 \
           --pin_memory \
           --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the left.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
           --validation_images \"/mnt/data/cogvideox-factory/tests/input_gengs_video_left_71.mp4:::/mnt/data/cogvideox-factory/tests/input_gengs_video_left_178.mp4\"
@@ -51,10 +51,10 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --lora_alpha 256 \
           --mixed_precision bf16 \
           --output_dir $output_dir \
-          --max_num_frames 29 \
-          --train_batch_size 8 \
+          --max_num_frames 17 \
+          --train_batch_size 16 \
           --max_train_steps $steps \
-          --checkpointing_steps 500 \
+          --checkpointing_steps 1000 \
           --gradient_accumulation_steps 1 \
           --gradient_checkpointing \
           --learning_rate $learning_rate \
@@ -72,6 +72,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --allow_tf32 \
           --report_to wandb \
           --load_tensors \
+          --use_noise_condition \
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"

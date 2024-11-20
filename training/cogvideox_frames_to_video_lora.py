@@ -241,6 +241,7 @@ def run_validation(
         pipeline_args = {
             "image": all_frames[0],
             "frames": all_frames[1:],
+            "use_noise_condition": args.use_noise_condition,
             "prompt": validation_prompt,
             "guidance_scale": args.guidance_scale,
             "use_dynamic_cfg": args.use_dynamic_cfg,
@@ -789,7 +790,8 @@ def main(args):
                 )
 
                 if args.use_noise_condition:
-                    noise = scheduler.add_noise(image_latents, noise, timesteps)
+                    # noise = scheduler.add_noise(image_latents, noise, timesteps)
+                    noise += (image_latents * 0.5)
 
                 # Prepare rotary embeds
                 image_rotary_emb = (
@@ -973,6 +975,7 @@ def main(args):
                 pipeline_args = {
                     "image": all_frames[0],
                     "frames": all_frames[1:],
+                    "use_noise_condition": args.use_noise_condition,
                     "prompt": validation_prompt,
                     "guidance_scale": args.guidance_scale,
                     "use_dynamic_cfg": args.use_dynamic_cfg,
