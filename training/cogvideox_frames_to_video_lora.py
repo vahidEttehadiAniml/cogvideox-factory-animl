@@ -751,6 +751,7 @@ def main(args):
                 if args.use_noise_condition:
                     padding_shape = (video_latents.shape[0], video_latents.shape[1] - 1, *video_latents.shape[2:])
                     latent_padding = image_latents.new_zeros(padding_shape)
+                    noise_condition = image_latents.clone()
                     image_latents = torch.cat([video_latents[:,:1], latent_padding], dim=1)
                 else:
                     #### copy the first frames to conditions
@@ -791,7 +792,7 @@ def main(args):
 
                 if args.use_noise_condition:
                     # noise = scheduler.add_noise(image_latents, noise, timesteps)
-                    noise += (image_latents * 0.5)
+                    noise += (noise_condition * 0.5)
 
                 # Prepare rotary embeds
                 image_rotary_emb = (
