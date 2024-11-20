@@ -8,7 +8,7 @@ GPU_IDS="0,1,2,3,4,5,6,7"
 
 # Training Configurations
 # Experiment with as many hyperparameters as you want!
-LEARNING_RATES=("1e-3")
+LEARNING_RATES=("2e-4")
 LR_SCHEDULES=("cosine_with_restarts")
 OPTIMIZERS=("adamw")
 MAX_TRAIN_STEPS=("4000")
