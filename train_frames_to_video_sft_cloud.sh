@@ -52,7 +52,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --max_num_frames 17 \
           --train_batch_size 1 \
           --max_train_steps $steps \
-          --checkpointing_steps 1000 \
+          --checkpointing_steps 500 \
           --gradient_accumulation_steps 1 \
           --gradient_checkpointing \
           --learning_rate $learning_rate \
