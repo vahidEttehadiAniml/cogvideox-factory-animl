@@ -42,7 +42,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --dataloader_num_workers 48 \
           --pin_memory \
           --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the left.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
-          --validation_images \"/mnt/data/cogvideox-factory-animl/assets/tests/videos/sneaker_side.mp4:::/mnt/data/cogvideox-factory-animl/assets/tests/videos/sneaker_front.mp4\"
+          --validation_images \"/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_side.mp4:::/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_front.mp4\"
           --validation_prompt_separator ::: \
           --num_validation_videos 1 \
           --validation_epochs 1 \
