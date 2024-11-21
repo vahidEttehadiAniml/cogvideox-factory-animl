@@ -230,6 +230,7 @@ def run_validation(
         pipeline_args = {
             "image": all_frames[0],
             "frames": all_frames[1:],
+            "use_noise_condition": args.use_noise_condition,
             "prompt": validation_prompt,
             "guidance_scale": args.guidance_scale,
             "use_dynamic_cfg": args.use_dynamic_cfg,
@@ -713,13 +714,15 @@ def main(args):
                 video_latents = video_latents.permute(0, 2, 1, 3, 4)  # [B, F, C, H, W]
                 video_latents = video_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
 
-                #### copy the first frames to conditions
-                image_latents[:,0] = video_latents[:,0].clone()
-                image_latents = image_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
-
-                # padding_shape = (video_latents.shape[0], video_latents.shape[1] - 1, *video_latents.shape[2:])
-                # latent_padding = image_latents.new_zeros(padding_shape)
-                # image_latents = torch.cat([image_latents, latent_padding], dim=1)
+                if args.use_noise_condition:
+                    padding_shape = (video_latents.shape[0], video_latents.shape[1] - 1, *video_latents.shape[2:])
+                    latent_padding = image_latents.new_zeros(padding_shape)
+                    latent_condition = image_latents.clone()
+                    image_latents = torch.cat([video_latents[:,:1], latent_padding], dim=1)
+                else:
+                    #### copy the first frames to conditions
+                    image_latents[:,0] = video_latents[:,0].clone()
+                    image_latents = image_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
 
                 if random.random() < args.noised_image_dropout:
                     image_latents = torch.zeros_like(image_latents)
@@ -768,7 +771,11 @@ def main(args):
 
                 # Add noise to the model input according to the noise magnitude at each timestep
                 # (this is the forward diffusion process)
-                noisy_video_latents = scheduler.add_noise(video_latents, noise, timesteps)
+                if args.use_noise_condition:
+                    noisy_video_latents = scheduler.add_noise(latent_condition, noise, timesteps)
+                else:
+                    noisy_video_latents = scheduler.add_noise(video_latents, noise, timesteps)
+
                 noisy_model_input = torch.cat([noisy_video_latents, image_latents], dim=2)
 
                 # Predict the noise residual
@@ -928,6 +935,7 @@ def main(args):
                 pipeline_args = {
                     "image": all_frames[0],
                     "frames": all_frames[1:],
+                    "use_noise_condition": args.use_noise_condition,
                     "prompt": validation_prompt,
                     "guidance_scale": args.guidance_scale,
                     "use_dynamic_cfg": args.use_dynamic_cfg,

@@ -751,13 +751,12 @@ def main(args):
                 if args.use_noise_condition:
                     padding_shape = (video_latents.shape[0], video_latents.shape[1] - 1, *video_latents.shape[2:])
                     latent_padding = image_latents.new_zeros(padding_shape)
-                    noise_condition = image_latents.clone()
+                    latent_condition = image_latents.clone()
                     image_latents = torch.cat([video_latents[:,:1], latent_padding], dim=1)
                 else:
                     #### copy the first frames to conditions
                     image_latents[:,0] = video_latents[:,0].clone()
                     image_latents = image_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
-
 
 
                 if random.random() < args.noised_image_dropout:
@@ -790,10 +789,6 @@ def main(args):
                     device=accelerator.device,
                 )
 
-                if args.use_noise_condition:
-                    # noise = scheduler.add_noise(image_latents, noise, timesteps)
-                    noise += (noise_condition * 0.5)
-
                 # Prepare rotary embeds
                 image_rotary_emb = (
                     prepare_rotary_positional_embeddings(
@@ -811,7 +806,11 @@ def main(args):
 
                 # Add noise to the model input according to the noise magnitude at each timestep
                 # (this is the forward diffusion process)
-                noisy_video_latents = scheduler.add_noise(video_latents, noise, timesteps)
+                if args.use_noise_condition:
+                    noisy_video_latents = scheduler.add_noise(latent_condition, noise, timesteps)
+                else:
+                    noisy_video_latents = scheduler.add_noise(video_latents, noise, timesteps)
+
                 noisy_model_input = torch.cat([noisy_video_latents, image_latents], dim=2)
 
                 # Predict the noise residual

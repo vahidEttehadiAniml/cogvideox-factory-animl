@@ -8,7 +8,7 @@ GPU_IDS="0,1,2,3,4,5,6,7"
 
 # Training Configurations
 # Experiment with as many hyperparameters as you want!
-LEARNING_RATES=("2e-4")
+LEARNING_RATES=("5e-4")
 LR_SCHEDULES=("cosine_with_restarts")
 OPTIMIZERS=("adamw")
 MAX_TRAIN_STEPS=("4000")
@@ -28,9 +28,9 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
   for lr_schedule in "${LR_SCHEDULES[@]}"; do
     for optimizer in "${OPTIMIZERS[@]}"; do
       for steps in "${MAX_TRAIN_STEPS[@]}"; do
-        output_dir="/mnt/data/cogvideox-factory-animl/runs/cogvideox-lora__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
+        output_dir="/mnt/data/src/cogvideox-factory-animl/runs/cogvideox-sft__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
 
-        cmd="accelerate launch --config_file $ACCELERATE_CONFIG_FILE --gpu_ids $GPU_IDS training/cogvideox_frames_to_video_lora.py \
+        cmd="accelerate launch --config_file $ACCELERATE_CONFIG_FILE --gpu_ids $GPU_IDS training/cogvideox_frames_to_video_sft.py \
           --pretrained_model_name_or_path THUDM/CogVideoX-5b-I2V \
           --data_root $DATA_ROOT \
           --caption_column $CAPTION_COLUMN \
@@ -39,7 +39,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --height_buckets 480 \
           --width_buckets 720 \
           --frame_buckets 17 \
-          --dataloader_num_workers 48 \
+          --dataloader_num_workers 8 \
           --pin_memory \
           --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the left.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
           --validation_images \"/mnt/data/cogvideox-factory-animl/assets/tests/videos/sneaker_side.mp4:::/mnt/data/cogvideox-factory-animl/assets/tests/videos/sneaker_front.mp4\"
@@ -47,12 +47,10 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --num_validation_videos 1 \
           --validation_epochs 1 \
           --seed 42 \
-          --rank 256 \
-          --lora_alpha 256 \
           --mixed_precision bf16 \
           --output_dir $output_dir \
           --max_num_frames 17 \
-          --train_batch_size 16 \
+          --train_batch_size 1 \
           --max_train_steps $steps \
           --checkpointing_steps 1000 \
           --gradient_accumulation_steps 1 \
@@ -72,7 +70,8 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --allow_tf32 \
           --report_to wandb \
           --load_tensors \
-          --use_noise_condition \
+          --enable_model_cpu_offload \
+          --use_cpu_offload_optimizer \
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"
