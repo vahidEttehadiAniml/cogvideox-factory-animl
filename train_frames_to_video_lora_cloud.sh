@@ -28,7 +28,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
   for lr_schedule in "${LR_SCHEDULES[@]}"; do
     for optimizer in "${OPTIMIZERS[@]}"; do
       for steps in "${MAX_TRAIN_STEPS[@]}"; do
-        output_dir="/mnt/data/src/cogvideox-factory-animl/runs/cogvideox-lora-noise__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
+        output_dir="/mnt/data/src/cogvideox-factory-animl/runs/cogvideox-lora-last__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
 
         cmd="accelerate launch --config_file $ACCELERATE_CONFIG_FILE --gpu_ids $GPU_IDS training/cogvideox_frames_to_video_lora.py \
           --pretrained_model_name_or_path THUDM/CogVideoX-5b-I2V \
@@ -41,8 +41,8 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --frame_buckets 17 \
           --dataloader_num_workers 48 \
           --pin_memory \
-          --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the left.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
-          --validation_images \"/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_side.mp4:::/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_front.mp4\"
+          --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the right.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
+          --validation_images \"/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_side2right.mp4:::/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_front2left.mp4\"
           --validation_prompt_separator ::: \
           --num_validation_videos 1 \
           --validation_epochs 1 \

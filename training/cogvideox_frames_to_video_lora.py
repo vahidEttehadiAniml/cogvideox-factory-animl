@@ -238,9 +238,15 @@ def run_validation(
     validation_images = args.validation_images.split(args.validation_prompt_separator)
     for validation_image, validation_prompt in zip(validation_images, validation_prompts):
         all_frames = load_video(validation_image)
+        if args.add_last_frame:
+            image_inp = all_frames[:2]
+            video_cond = all_frames[2:]
+        else:
+            image_inp = all_frames[0]
+            video_cond = all_frames[1:]
         pipeline_args = {
-            "image": all_frames[0],
-            "frames": all_frames[1:],
+            "image": image_inp,
+            "frames": video_cond,
             "use_noise_condition": args.use_noise_condition,
             "prompt": validation_prompt,
             "guidance_scale": args.guidance_scale,
@@ -974,9 +980,15 @@ def main(args):
             validation_images = args.validation_images.split(args.validation_prompt_separator)
             for validation_image, validation_prompt in zip(validation_images, validation_prompts):
                 all_frames = load_video(validation_image)
+                if args.add_last_frame:
+                    image_inp = all_frames[:2]
+                    video_cond = all_frames[2:]
+                else:
+                    image_inp = all_frames[0]
+                    video_cond = all_frames[1:]
                 pipeline_args = {
-                    "image": all_frames[0],
-                    "frames": all_frames[1:],
+                    "image": image_inp,
+                    "frames": video_cond,
                     "use_noise_condition": args.use_noise_condition,
                     "prompt": validation_prompt,
                     "guidance_scale": args.guidance_scale,
