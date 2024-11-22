@@ -8,10 +8,10 @@ GPU_IDS="0,1,2,3,4,5,6,7"
 
 # Training Configurations
 # Experiment with as many hyperparameters as you want!
-LEARNING_RATES=("5e-4")
+LEARNING_RATES=("2e-4")
 LR_SCHEDULES=("cosine_with_restarts")
 OPTIMIZERS=("adamw")
-MAX_TRAIN_STEPS=("4000")
+MAX_TRAIN_STEPS=("4500")
 
 # Single GPU uncompiled training
 ACCELERATE_CONFIG_FILE="accelerate_configs/uncompiled_8.yaml"

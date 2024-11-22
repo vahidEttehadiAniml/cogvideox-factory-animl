@@ -2,7 +2,7 @@ import os, glob
 
 import torch
 from diffusers import CogVideoXFramesToVideoPipeline
-from diffusers.utils import export_to_video, load_image
+from diffusers.utils import export_to_video, load_image, load_video
 
 from diffusers import AutoencoderKLCogVideoX, CogVideoXVideoToVideoPipeline, CogVideoXTransformer3DModel, CogVideoXDPMScheduler
 from transformers import T5EncoderModel
@@ -16,6 +16,7 @@ negative_prompt = 'blurry, low-quality'
 imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/prod_UserTests_TpYfxf0PS1SiYhOkzgY3_Chaussure_de_sport_verte_360_LxBa6OKOzA08RauwfyHt/video_gen_data/{traj}/gengs'
 img_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/prod_UserTests_TpYfxf0PS1SiYhOkzgY3_Chaussure_de_sport_verte_360_LxBa6OKOzA08RauwfyHt/video_gen_data/{traj}/gs/000.png'
 num_frames = 17
+use_noise_condition = False
 
 
 video_inp = []
@@ -57,11 +58,14 @@ pipe.set_adapters(["test_1"], [lora_scaling])
 
 
 image = load_image(img_path)
+
+vid_path = '/media/vahid/DATA/projects/cogvideox-factory/assets/tests/videos/sneaker_side.mp4'
+inp_vid = load_video(vid_path)
 # video = pipe(image, prompt, num_frames=num_frames, use_dynamic_cfg=True)
 # export_to_video(video.frames[0], "output_vid_reg_left_178_g8.mp4", fps=8)
 
-video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
-                          use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=True)
+video = pipe(inp_vid[0], frames=inp_vid[1:num_frames+1], prompt=prompt, negative_prompt=negative_prompt,
+                          use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 export_to_video(video.frames[0][:30], f"output_vid_gengs_{traj}_g5_50_6_lora_cond.mp4", fps=8)
 
 # video = pipe(image, frames=video_inp_lora[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
