@@ -349,6 +349,11 @@ def _get_training_args(parser: argparse.ArgumentParser) -> None:
             "otherwise. Please read the comments in https://github.com/a-r-r-o-w/cogvideox-factory/issues/26 to understand why."
         ),
     )
+    parser.add_argument(
+        "--add_last_frame",
+        action="store_true",
+        help="add the last frame as a condition.",
+    )
 
 
 def _get_optimizer_args(parser: argparse.ArgumentParser) -> None:

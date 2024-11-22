@@ -758,6 +758,8 @@ def main(args):
                     image_latents[:,0] = video_latents[:,0].clone()
                     image_latents = image_latents.to(memory_format=torch.contiguous_format, dtype=weight_dtype)
 
+                if args.add_last_frame:
+                    image_latents[:, -1] = video_latents[:, -1].clone()
 
                 if random.random() < args.noised_image_dropout:
                     image_latents = torch.zeros_like(image_latents)

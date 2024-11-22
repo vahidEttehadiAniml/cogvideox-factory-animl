@@ -72,7 +72,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --allow_tf32 \
           --report_to wandb \
           --load_tensors \
-          --use_noise_condition \
+          --add_last_frame \
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"
