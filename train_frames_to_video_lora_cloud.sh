@@ -72,6 +72,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --allow_tf32 \
           --report_to wandb \
           --load_tensors \
+          --resume_from_checkpoint runs/cogvideox-lora__optimizer_adamw__steps_4500__lr-schedule_cosine_with_restarts__learning-rate_2e-4/checkpoint-2000 \
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"
