@@ -1,5 +1,5 @@
 import os, glob
-
+from PIL import Image
 import torch
 from diffusers import CogVideoXFramesToVideoPipeline
 from diffusers.utils import export_to_video, load_image, load_video
@@ -8,21 +8,23 @@ from diffusers import AutoencoderKLCogVideoX, CogVideoXVideoToVideoPipeline, Cog
 from transformers import T5EncoderModel
 num_frames = 17
 use_noise_condition = False
-traj = 'left_179'
-prompt = "A nice sneaker. High quality, ultrarealistic detail and breath-taking movie-like camera shot."
+traj = 'take_0.0/top_left'
+cap_id = 'prod_michael_yfr0WaE7EbA2vbe64CVg_blue_urn_with_emblem_180_NDPSvIHueedKAC3Yau5U'
+prompt = "camera trajectory to left, High quality, ultrarealistic detail and breath-taking movie-like camera shot."
 negative_prompt = 'blurry, low-quality'
-# imgs_path = '/media/vahid/DATA/data/animl_data/generated_video_data_processed/prod_akmeso2k11_uzvgktub4XaXSPBHebTp_white_and_green_sneakers_quick_180_wNoyIxBvatRwV1gdEQMr/video_gen_data/left_70/grm'
-# img_path = '/media/vahid/DATA/data/animl_data/generated_video_data_processed/prod_akmeso2k11_uzvgktub4XaXSPBHebTp_white_and_green_sneakers_quick_180_wNoyIxBvatRwV1gdEQMr/video_gen_data/left_70/gs/000.png'
-# img_path = '/media/vahid/DATA/data/animl_data/trainings/prod/UserTests_TpYfxf0PS1SiYhOkzgY3/Chaussure_de_sport_verte_360_LxBa6OKOzA08RauwfyHt/gengs/inference_images/002.png'
-imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/prod_zenithattireglobal_nLe5o4J96EsRRUXOGefe_pair_of_beige_sneakers_360_ovHorTi2EvXgUifx39Jy/video_gen_data/{traj}/gengs'
-img_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/prod_zenithattireglobal_nLe5o4J96EsRRUXOGefe_pair_of_beige_sneakers_360_ovHorTi2EvXgUifx39Jy/video_gen_data/{traj}/gs/000.png'
-img_path_last = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/prod_zenithattireglobal_nLe5o4J96EsRRUXOGefe_pair_of_beige_sneakers_360_ovHorTi2EvXgUifx39Jy/video_gen_data/{traj}/gs/{num_frames-1:03d}.png'
 
+# imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/{cap_id}/video_gen_data/{traj}/gengs'
+# img_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/{cap_id}/video_gen_data/{traj}/gs/000.png'
+# img_path_last = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/{cap_id}/video_gen_data/{traj}/gs/{num_frames-1:03d}.png'
+imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gengs'
+img_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/000.png'
+img_path_last = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/{num_frames-1:03d}.png'
 
 
 video_inp = []
 for n, im_path in enumerate(sorted(glob.glob(f"{imgs_path}/*.png"))):
-    image = load_image(im_path)
+    image = load_image(im_path).resize((512,512))
+    # image = Image.new("RGB", (512, 512), (255, 255, 255))
     video_inp.append(image)
 
 for n in range(len(video_inp), num_frames):
@@ -31,7 +33,11 @@ for n in range(len(video_inp), num_frames):
 image = load_image(img_path).resize((512,512))
 image_last = load_image(img_path_last).resize((512,512))
 
-export_to_video([image]+[image_last]+video_inp[:num_frames], f"input_vid_gengs_{traj}.mp4", fps=8)
+cap_id = cap_id.replace('/','_')
+traj = traj.replace('/','_')
+
+# export_to_video([image]+[image_last]+video_inp[:num_frames], f"input_vid_gengs_{traj}.mp4", fps=8)
+export_to_video([image]+video_inp[:num_frames], f"input_{cap_id[-5:]}_{traj}.mp4", fps=8)
 
 
 # img_list = sorted(glob.glob(f"{imgs_path}/*.png"))
@@ -71,7 +77,12 @@ pipe.set_adapters(["test_1"], [lora_scaling])
 
 video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
-export_to_video(video.frames[0][:30], f"output_vid_gengs_{traj}_g5_50_6_lora_cond.mp4", fps=8)
+# video = pipe([image, image_last], frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
+#                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
+vid_out = []
+for v in video.frames[0]:
+    vid_out.append(v.resize((512,512)))
+export_to_video(vid_out, f"output_{cap_id[-5:]}_{traj}.mp4", fps=8)
 
 # video = pipe(image, frames=video_inp_lora[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
 #                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=True)
