@@ -55,15 +55,15 @@ export_to_video([image]+video_inp[:num_frames], f"input_{cap_id[-5:]}_{traj}.mp4
 #     video_inp_lora.append(image)
 
 # vae = AutoencoderKLCogVideoX.from_pretrained("THUDM/CogVideoX-5b-I2V", subfolder="vae", torch_dtype=torch.bfloat16)
-pipe = CogVideoXFramesToVideoPipeline.from_pretrained("/media/vahid/DATA/projects/CogVideo/models/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
+pipe = CogVideoXFramesToVideoPipeline.from_pretrained("/media/vahid/DATA/projects/CogVideo/models/CogVideoX1.5-5B-I2V", torch_dtype=torch.bfloat16).to("cuda")
 # pipe = CogVideoXVideoToVideoPipeline.from_pretrained("THUDM/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
 lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora__optimizer_adamw__steps_4500__lr-schedule_cosine_with_restarts__learning-rate_2e-4/checkpoint-2000"
 lora_rank = 256
 lora_alpha = 256
 lora_scaling = lora_alpha / lora_rank
-pipe.load_lora_weights(lora_path, weight_name="pytorch_lora_weights.safetensors", adapter_name="test_1")
-# pipe.fuse_lora(lora_scale=lora_scaling)
-pipe.set_adapters(["test_1"], [lora_scaling])
+# pipe.load_lora_weights(lora_path, weight_name="pytorch_lora_weights.safetensors", adapter_name="test_1")
+# # pipe.fuse_lora(lora_scale=lora_scaling)
+# pipe.set_adapters(["test_1"], [lora_scaling])
 
 # # pipe.to("cuda")
 
@@ -75,8 +75,8 @@ pipe.set_adapters(["test_1"], [lora_scaling])
 # inp_vid = load_video(vid_path)
 # video = pipe(image, prompt, num_frames=num_frames, use_dynamic_cfg=True)
 
-video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
-                          use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
+video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt, num_frames=17,
+             height=1024, width=1024, use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 # video = pipe([image, image_last], frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
 #                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 vid_out = []
