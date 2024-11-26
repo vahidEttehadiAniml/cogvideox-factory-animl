@@ -38,8 +38,8 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --id_token BW_STYLE \
           --height_buckets 1024 \
           --width_buckets 1024 \
-          --frame_buckets 29 \
-          --dataloader_num_workers 48 \
+          --frame_buckets 17 \
+          --dataloader_num_workers 16 \
           --pin_memory \
           --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the right.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
           --validation_images \"/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_side2right.mp4:::/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_front2left.mp4\"
@@ -72,7 +72,6 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --allow_tf32 \
           --report_to wandb \
           --load_tensors \
-          --resume_from_checkpoint runs/cogvideox-lora__optimizer_adamw__steps_4500__lr-schedule_cosine_with_restarts__learning-rate_2e-4/checkpoint-2000 \
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"
