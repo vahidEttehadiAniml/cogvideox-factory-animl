@@ -558,6 +558,17 @@ def main():
         dist.destroy_process_group()
 
     if rank == 0:
+        # Create prompts.txt
+        prompts_txt = output_dir.joinpath("prompts.txt")
+        with open(prompts_txt, "w") as file:
+            for item in processed_files:
+                file.write(f"{item['prompt']}\n")
+
+        # Create videos.txt
+        videos_txt = output_dir.joinpath("videos.txt")
+        with open(videos_txt, "w") as file:
+            for item in processed_files:
+                file.write(f"{item['video']}\n")
         print(f"Completed preprocessing. All files saved to `{output_dir.as_posix()}`")
 
 if __name__ == "__main__":
