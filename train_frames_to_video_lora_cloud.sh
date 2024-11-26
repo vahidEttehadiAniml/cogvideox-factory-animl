@@ -19,8 +19,8 @@ ACCELERATE_CONFIG_FILE="accelerate_configs/uncompiled_8.yaml"
 # Absolute path to where the data is located. Make sure to have read the README for how to prepare data.
 # This example assumes you downloaded an already prepared dataset from HF CLI as follows:
 #   huggingface-cli download --repo-type dataset Wild-Heart/Disney-VideoGeneration-Dataset --local-dir /path/to/my/datasets/disney-dataset
-DATA_ROOT="/mnt/data/cogvid_preproc_sub_latents"
-CAPTION_COLUMN="prompts.txt"
+DATA_ROOT="/mnt/data/cogvid_preproc_sub"
+CAPTION_COLUMN="prompt.txt"
 VIDEO_COLUMN="videos.txt"
 
 # Launch experiments with different hyperparameters
@@ -28,7 +28,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
   for lr_schedule in "${LR_SCHEDULES[@]}"; do
     for optimizer in "${OPTIMIZERS[@]}"; do
       for steps in "${MAX_TRAIN_STEPS[@]}"; do
-        output_dir="/mnt/data/src/cogvideox-factory-animl/runs/cogvideox-lora__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
+        output_dir="/mnt/data/cogvideox-factory-animl/runs/cogvideox-lora__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
 
         cmd="accelerate launch --config_file $ACCELERATE_CONFIG_FILE --gpu_ids $GPU_IDS training/cogvideox_frames_to_video_lora.py \
           --pretrained_model_name_or_path THUDM/CogVideoX1.5-5B-I2V \
@@ -42,7 +42,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --dataloader_num_workers 16 \
           --pin_memory \
           --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the right.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
-          --validation_images \"/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_side2right.mp4:::/mnt/data/src/cogvideox-factory-animl/assets/tests/videos/sneaker_front2left.mp4\"
+          --validation_images \"/mnt/data/cogvideox-factory-animl/assets/tests/videos/sneaker_side2right.mp4:::/mnt/data/cogvideox-factory-animl/assets/tests/videos/sneaker_front2left.mp4\"
           --validation_prompt_separator ::: \
           --num_validation_videos 1 \
           --validation_epochs 1 \
