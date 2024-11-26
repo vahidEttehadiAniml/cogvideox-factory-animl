@@ -572,6 +572,10 @@ def main():
                 }
             )
 
+            output_queue.put(None)
+            save_thread.shutdown(wait=True)
+            save_future.result()
+
         except Exception:
             print("-------------------------")
             print(f"An exception occurred while processing data: {rank=}, {world_size=}, {step=}")
