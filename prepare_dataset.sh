@@ -13,11 +13,11 @@ OUTPUT_DIR="/mnt/data/cogvid_preproc_sub_latents"
 #WIDTH_BUCKETS="720 960"
 HEIGHT_BUCKETS="1024"
 WIDTH_BUCKETS="1024"
-FRAME_BUCKETS="29"
-MAX_NUM_FRAMES="29"
+FRAME_BUCKETS="17"
+MAX_NUM_FRAMES="17"
 MAX_SEQUENCE_LENGTH=226
 TARGET_FPS=8
-BATCH_SIZE=1
+BATCH_SIZE=8
 DTYPE=fp16
 
 # To create a folder-style dataset structure without pre-encoding videos and captions
@@ -37,6 +37,7 @@ CMD_WITHOUT_PRE_ENCODING="\
       --max_sequence_length $MAX_SEQUENCE_LENGTH \
       --target_fps $TARGET_FPS \
       --batch_size $BATCH_SIZE \
+      --use_tiling \
       --dtype $DTYPE
 "
 
