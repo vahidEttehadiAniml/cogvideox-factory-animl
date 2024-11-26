@@ -20,18 +20,19 @@ imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{c
 img_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/000.png'
 img_path_last = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/{num_frames-1:03d}.png'
 
+img_size = 768
 
 video_inp = []
 for n, im_path in enumerate(sorted(glob.glob(f"{imgs_path}/*.png"))):
-    image = load_image(im_path).resize((512,512))
+    image = load_image(im_path).resize((img_size,img_size))
     # image = Image.new("RGB", (512, 512), (255, 255, 255))
     video_inp.append(image)
 
 for n in range(len(video_inp), num_frames):
     video_inp.append(image)
 
-image = load_image(img_path).resize((512,512))
-image_last = load_image(img_path_last).resize((512,512))
+image = load_image(img_path).resize((img_size,img_size))
+image_last = load_image(img_path_last).resize((img_size,img_size))
 
 cap_id = cap_id.replace('/','_')
 traj = traj.replace('/','_')
@@ -61,13 +62,13 @@ lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora__o
 lora_rank = 256
 lora_alpha = 256
 lora_scaling = lora_alpha / lora_rank
-# pipe.load_lora_weights(lora_path, weight_name="pytorch_lora_weights.safetensors", adapter_name="test_1")
-# # pipe.fuse_lora(lora_scale=lora_scaling)
-# pipe.set_adapters(["test_1"], [lora_scaling])
+pipe.load_lora_weights(lora_path, weight_name="pytorch_lora_weights.safetensors", adapter_name="test_1")
+# pipe.fuse_lora(lora_scale=lora_scaling)
+pipe.set_adapters(["test_1"], [lora_scaling])
 
 # # pipe.to("cuda")
 
-# pipe.vae.enable_tiling()
+pipe.vae.enable_tiling()
 
 
 
@@ -75,13 +76,13 @@ lora_scaling = lora_alpha / lora_rank
 # inp_vid = load_video(vid_path)
 # video = pipe(image, prompt, num_frames=num_frames, use_dynamic_cfg=True)
 
-video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt, num_frames=17,
-             height=1024, width=1024, use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
+video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt, num_frames=num_frames,
+             height=img_size, width=img_size, use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 # video = pipe([image, image_last], frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
 #                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 vid_out = []
 for v in video.frames[0]:
-    vid_out.append(v.resize((512,512)))
+    vid_out.append(v.resize((img_size,img_size)))
 export_to_video(vid_out, f"output_{cap_id[-5:]}_{traj}.mp4", fps=8)
 
 # video = pipe(image, frames=video_inp_lora[:num_frames], prompt=prompt, negative_prompt=negative_prompt,

@@ -19,7 +19,7 @@ ACCELERATE_CONFIG_FILE="accelerate_configs/uncompiled_1.yaml"
 # Absolute path to where the data is located. Make sure to have read the README for how to prepare data.
 # This example assumes you downloaded an already prepared dataset from HF CLI as follows:
 #   huggingface-cli download --repo-type dataset Wild-Heart/Disney-VideoGeneration-Dataset --local-dir /path/to/my/datasets/disney-dataset
-DATA_ROOT="/media/vahid/DATA/data/animl_data/cogvid_preproc_sub_latents"
+DATA_ROOT="/media/vahid/DATA/data/animl_data/cogvid_preproc_sub_latents_1024"
 CAPTION_COLUMN="prompts.txt"
 VIDEO_COLUMN="videos.txt"
 
@@ -31,18 +31,18 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
         output_dir="/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
 
         cmd="accelerate launch --config_file $ACCELERATE_CONFIG_FILE --gpu_ids $GPU_IDS training/cogvideox_frames_to_video_lora.py \
-          --pretrained_model_name_or_path /media/vahid/DATA/projects/CogVideo/models/CogVideoX-5b-I2V \
+          --pretrained_model_name_or_path /media/vahid/DATA/projects/CogVideo/models/CogVideoX1.5-5B-I2V \
           --data_root $DATA_ROOT \
           --caption_column $CAPTION_COLUMN \
           --video_column $VIDEO_COLUMN \
           --id_token BW_STYLE \
-          --height_buckets 480 \
-          --width_buckets 720 \
+          --height_buckets 1024 \
+          --width_buckets 1024 \
           --frame_buckets 29 \
           --dataloader_num_workers 8 \
           --pin_memory \
-          --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the left.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
-          --validation_images \"/media/vahid/DATA/projects/DimensionX/src/input_gengs_video_left_71.mp4:::/media/vahid/DATA/projects/DimensionX/src/input_gengs_video_left_178.mp4\"
+          --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the right.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
+          --validation_images \"assets/tests/videos/sneaker_side2right.mp4:::assets/tests/videos/sneaker_front2left.mp4\"
           --validation_prompt_separator ::: \
           --num_validation_videos 1 \
           --validation_epochs 1 \
@@ -52,7 +52,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --mixed_precision bf16 \
           --output_dir $output_dir \
           --max_num_frames 29 \
-          --train_batch_size 4 \
+          --train_batch_size 2 \
           --max_train_steps $steps \
           --checkpointing_steps 500 \
           --gradient_accumulation_steps 1 \
@@ -72,7 +72,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --allow_tf32 \
           --report_to wandb \
           --load_tensors \
-          --use_noise_condition \
+          --add_last_frame \
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"

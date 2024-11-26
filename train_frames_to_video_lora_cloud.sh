@@ -19,8 +19,8 @@ ACCELERATE_CONFIG_FILE="accelerate_configs/uncompiled_8.yaml"
 # Absolute path to where the data is located. Make sure to have read the README for how to prepare data.
 # This example assumes you downloaded an already prepared dataset from HF CLI as follows:
 #   huggingface-cli download --repo-type dataset Wild-Heart/Disney-VideoGeneration-Dataset --local-dir /path/to/my/datasets/disney-dataset
-DATA_ROOT="/mnt/data/cogvid_preproc_sub"
-CAPTION_COLUMN="prompt.txt"
+DATA_ROOT="/mnt/data/cogvid_preproc_sub_latents"
+CAPTION_COLUMN="prompts.txt"
 VIDEO_COLUMN="videos.txt"
 
 # Launch experiments with different hyperparameters
@@ -38,7 +38,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --id_token BW_STYLE \
           --height_buckets 1024 \
           --width_buckets 1024 \
-          --frame_buckets 17 \
+          --frame_buckets 29 \
           --dataloader_num_workers 16 \
           --pin_memory \
           --validation_prompt \"Side view of a nice sneaker, while camera trajectory is toward the right.:::Front view of a nice sneaker, while camera trajectory is toward the left.\"
@@ -51,8 +51,8 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --lora_alpha 256 \
           --mixed_precision bf16 \
           --output_dir $output_dir \
-          --max_num_frames 17 \
-          --train_batch_size 8 \
+          --max_num_frames 29 \
+          --train_batch_size 4 \
           --max_train_steps $steps \
           --checkpointing_steps 500 \
           --gradient_accumulation_steps 1 \
@@ -71,6 +71,8 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --max_grad_norm 1.0 \
           --allow_tf32 \
           --report_to wandb \
+          --load_tensors \
+          --add_last_frame \
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"
