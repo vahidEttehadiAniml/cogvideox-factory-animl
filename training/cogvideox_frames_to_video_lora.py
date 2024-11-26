@@ -822,11 +822,15 @@ def main(args):
 
                 noisy_model_input = torch.cat([noisy_video_latents, image_latents], dim=2)
 
+                # 8. Create ofs embeds if required
+                ofs_emb = None if transformer.config.ofs_embed_dim is None else noisy_model_input.new_full((1,), fill_value=2.0)
+
                 # Predict the noise residual
                 model_output = transformer(
                     hidden_states=noisy_model_input,
                     encoder_hidden_states=prompt_embeds,
                     timestep=timesteps,
+                    ofs = ofs_emb,
                     image_rotary_emb=image_rotary_emb,
                     return_dict=False,
                 )[0]
