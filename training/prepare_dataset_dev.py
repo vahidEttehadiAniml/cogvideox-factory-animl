@@ -37,7 +37,274 @@ DTYPE_MAPPING = {
     "bf16": torch.bfloat16,
 }
 
-# ... [previous helper functions remain the same] ...
+def check_height(x: Any) -> int:
+    x = int(x)
+    if x % 16 != 0:
+        raise argparse.ArgumentTypeError(
+            f"`--height_buckets` must be divisible by 16, but got {x} which does not fit criteria."
+        )
+    return x
+
+
+def check_width(x: Any) -> int:
+    x = int(x)
+    if x % 16 != 0:
+        raise argparse.ArgumentTypeError(
+            f"`--width_buckets` must be divisible by 16, but got {x} which does not fit criteria."
+        )
+    return x
+
+
+def check_frames(x: Any) -> int:
+    x = int(x)
+    if x % 4 != 0 and x % 4 != 1:
+        raise argparse.ArgumentTypeError(
+            f"`--frames_buckets` must be of form `4 * k` or `4 * k + 1`, but got {x} which does not fit criteria."
+        )
+    return x
+
+
+def get_args() -> Dict[str, Any]:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        default="THUDM/CogVideoX-2b",
+        help="Hugging Face model ID to use for tokenizer, text encoder and VAE.",
+    )
+    parser.add_argument("--data_root", type=str, required=True, help="Path to where training data is located.")
+    parser.add_argument(
+        "--dataset_file", type=str, default=None, help="Path to CSV file containing metadata about training data."
+    )
+    parser.add_argument(
+        "--caption_column",
+        type=str,
+        default="caption",
+        help="If using a CSV file via the `--dataset_file` argument, this should be the name of the column containing the captions. If using the folder structure format for data loading, this should be the name of the file containing line-separated captions (the file should be located in `--data_root`).",
+    )
+    parser.add_argument(
+        "--video_column",
+        type=str,
+        default="video",
+        help="If using a CSV file via the `--dataset_file` argument, this should be the name of the column containing the video paths. If using the folder structure format for data loading, this should be the name of the file containing line-separated video paths (the file should be located in `--data_root`).",
+    )
+    parser.add_argument(
+        "--id_token",
+        type=str,
+        default=None,
+        help="Identifier token appended to the start of each prompt if provided.",
+    )
+    parser.add_argument(
+        "--height_buckets",
+        nargs="+",
+        type=check_height,
+        default=[256, 320, 384, 480, 512, 576, 720, 768, 960, 1024, 1280, 1536],
+    )
+    parser.add_argument(
+        "--width_buckets",
+        nargs="+",
+        type=check_width,
+        default=[256, 320, 384, 480, 512, 576, 720, 768, 960, 1024, 1280, 1536],
+    )
+    parser.add_argument(
+        "--frame_buckets",
+        nargs="+",
+        type=check_frames,
+        default=[49],
+    )
+    parser.add_argument(
+        "--random_flip",
+        type=float,
+        default=None,
+        help="If random horizontal flip augmentation is to be used, this should be the flip probability.",
+    )
+    parser.add_argument(
+        "--dataloader_num_workers",
+        type=int,
+        default=0,
+        help="Number of subprocesses to use for data loading. 0 means that the data will be loaded in the main process.",
+    )
+    parser.add_argument(
+        "--pin_memory",
+        action="store_true",
+        help="Whether or not to use the pinned memory setting in pytorch dataloader.",
+    )
+    parser.add_argument(
+        "--video_reshape_mode",
+        type=str,
+        default=None,
+        help="All input videos are reshaped to this mode. Choose between ['center', 'random', 'none']",
+    )
+    parser.add_argument(
+        "--save_image_latents",
+        action="store_true",
+        help="Whether or not to encode and store image latents, which are required for image-to-video finetuning. The image latents are the first frame of input videos encoded with the VAE.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        required=True,
+        help="Path to output directory where preprocessed videos/latents/embeddings will be saved.",
+    )
+    parser.add_argument("--max_num_frames", type=int, default=49, help="Maximum number of frames in output video.")
+    parser.add_argument(
+        "--max_sequence_length", type=int, default=226, help="Max sequence length of prompt embeddings."
+    )
+    parser.add_argument("--target_fps", type=int, default=8, help="Frame rate of output videos.")
+    parser.add_argument(
+        "--save_latents_and_embeddings",
+        action="store_true",
+        help="Whether to encode videos/captions to latents/embeddings and save them in pytorch serializable format.",
+    )
+    parser.add_argument(
+        "--use_slicing",
+        action="store_true",
+        help="Whether to enable sliced encoding/decoding in the VAE. Only used if `--save_latents_and_embeddings` is also used.",
+    )
+    parser.add_argument(
+        "--use_tiling",
+        action="store_true",
+        help="Whether to enable tiled encoding/decoding in the VAE. Only used if `--save_latents_and_embeddings` is also used.",
+    )
+    parser.add_argument("--batch_size", type=int, default=1, help="Number of videos to process at once in the VAE.")
+    parser.add_argument(
+        "--num_decode_threads",
+        type=int,
+        default=0,
+        help="Number of decoding threads for `decord` to use. The default `0` means to automatically determine required number of threads.",
+    )
+    parser.add_argument(
+        "--dtype",
+        type=str,
+        choices=["fp32", "fp16", "bf16"],
+        default="fp32",
+        help="Data type to use when generating latents and prompt embeddings.",
+    )
+    parser.add_argument("--seed", type=int, default=42, help="Seed for reproducibility.")
+    parser.add_argument(
+        "--num_artifact_workers", type=int, default=4, help="Number of worker threads for serializing artifacts."
+    )
+    return parser.parse_args()
+
+
+def _get_t5_prompt_embeds(
+    tokenizer: T5Tokenizer,
+    text_encoder: T5EncoderModel,
+    prompt: Union[str, List[str]],
+    num_videos_per_prompt: int = 1,
+    max_sequence_length: int = 226,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+    text_input_ids=None,
+):
+    prompt = [prompt] if isinstance(prompt, str) else prompt
+    batch_size = len(prompt)
+
+    if tokenizer is not None:
+        text_inputs = tokenizer(
+            prompt,
+            padding="max_length",
+            max_length=max_sequence_length,
+            truncation=True,
+            add_special_tokens=True,
+            return_tensors="pt",
+        )
+        text_input_ids = text_inputs.input_ids
+    else:
+        if text_input_ids is None:
+            raise ValueError("`text_input_ids` must be provided when the tokenizer is not specified.")
+
+    prompt_embeds = text_encoder(text_input_ids.to(device))[0]
+    prompt_embeds = prompt_embeds.to(dtype=dtype, device=device)
+
+    # duplicate text embeddings for each generation per prompt, using mps friendly method
+    _, seq_len, _ = prompt_embeds.shape
+    prompt_embeds = prompt_embeds.repeat(1, num_videos_per_prompt, 1)
+    prompt_embeds = prompt_embeds.view(batch_size * num_videos_per_prompt, seq_len, -1)
+
+    return prompt_embeds
+
+
+def encode_prompt(
+    tokenizer: T5Tokenizer,
+    text_encoder: T5EncoderModel,
+    prompt: Union[str, List[str]],
+    num_videos_per_prompt: int = 1,
+    max_sequence_length: int = 226,
+    device: Optional[torch.device] = None,
+    dtype: Optional[torch.dtype] = None,
+    text_input_ids=None,
+):
+    prompt = [prompt] if isinstance(prompt, str) else prompt
+    prompt_embeds = _get_t5_prompt_embeds(
+        tokenizer,
+        text_encoder,
+        prompt=prompt,
+        num_videos_per_prompt=num_videos_per_prompt,
+        max_sequence_length=max_sequence_length,
+        device=device,
+        dtype=dtype,
+        text_input_ids=text_input_ids,
+    )
+    return prompt_embeds
+
+
+def compute_prompt_embeddings(
+    tokenizer: T5Tokenizer,
+    text_encoder: T5EncoderModel,
+    prompts: List[str],
+    max_sequence_length: int,
+    device: torch.device,
+    dtype: torch.dtype,
+    requires_grad: bool = False,
+):
+    if requires_grad:
+        prompt_embeds = encode_prompt(
+            tokenizer,
+            text_encoder,
+            prompts,
+            num_videos_per_prompt=1,
+            max_sequence_length=max_sequence_length,
+            device=device,
+            dtype=dtype,
+        )
+    else:
+        with torch.no_grad():
+            prompt_embeds = encode_prompt(
+                tokenizer,
+                text_encoder,
+                prompts,
+                num_videos_per_prompt=1,
+                max_sequence_length=max_sequence_length,
+                device=device,
+                dtype=dtype,
+            )
+    return prompt_embeds
+
+
+to_pil_image = transforms.ToPILImage(mode="RGB")
+
+
+def save_image(image: torch.Tensor, path: pathlib.Path) -> None:
+    image = to_pil_image(image)
+    image.save(path)
+
+
+def save_video(video: torch.Tensor, path: pathlib.Path, fps: int = 8) -> None:
+    video = [to_pil_image(frame) for frame in video]
+    export_to_video(video, path, fps=fps)
+
+
+def save_prompt(prompt: str, path: pathlib.Path) -> None:
+    with open(path, "w", encoding="utf-8") as file:
+        file.write(prompt)
+
+
+def save_metadata(metadata: Dict[str, Any], path: pathlib.Path) -> None:
+    with open(path, "w", encoding="utf-8") as file:
+        file.write(json.dumps(metadata))
+
+
 
 @torch.no_grad()
 def main():
