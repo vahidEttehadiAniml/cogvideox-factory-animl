@@ -201,8 +201,8 @@ def prepare_rotary_positional_embeddings(
     patch_size_t: int = None,
     attention_head_dim: int = 64,
     device: Optional[torch.device] = None,
-    base_height: int = 1024,
-    base_width: int = 1024,
+    base_height: int = 480,
+    base_width: int = 720,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     grid_height = height // (vae_scale_factor_spatial * patch_size)
     grid_width = width // (vae_scale_factor_spatial * patch_size)

@@ -240,10 +240,9 @@ def run_validation(
         all_frames = load_video(validation_image)
         if args.add_last_frame:
             image_inp = all_frames[:2]
-            video_cond = all_frames[2:]
         else:
             image_inp = all_frames[0]
-            video_cond = all_frames[1:]
+        video_cond = all_frames[2:]
         pipeline_args = {
             "image": image_inp,
             "frames": video_cond,
@@ -822,8 +821,9 @@ def main(args):
 
                 noisy_model_input = torch.cat([noisy_video_latents, image_latents], dim=2)
 
-                # 8. Create ofs embeds if required
-                ofs_emb = noisy_model_input.new_full((1,), fill_value=2.0)
+                # # 8. Create ofs embeds if required
+                # ofs_emb = noisy_model_input.new_full((1,), fill_value=2.0)
+                ofs_emb = None
 
                 # Predict the noise residual
                 model_output = transformer(
@@ -987,10 +987,9 @@ def main(args):
                 all_frames = load_video(validation_image)
                 if args.add_last_frame:
                     image_inp = all_frames[:2]
-                    video_cond = all_frames[2:]
                 else:
                     image_inp = all_frames[0]
-                    video_cond = all_frames[1:]
+                video_cond = all_frames[2:]
                 pipeline_args = {
                     "image": image_inp,
                     "frames": video_cond,
