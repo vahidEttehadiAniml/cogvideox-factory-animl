@@ -19,7 +19,7 @@ ACCELERATE_CONFIG_FILE="accelerate_configs/uncompiled_8.yaml"
 # Absolute path to where the data is located. Make sure to have read the README for how to prepare data.
 # This example assumes you downloaded an already prepared dataset from HF CLI as follows:
 #   huggingface-cli download --repo-type dataset Wild-Heart/Disney-VideoGeneration-Dataset --local-dir /path/to/my/datasets/disney-dataset
-DATA_ROOT="/mnt/data/cogvid_preproc_sub_latents"
+DATA_ROOT="/mnt/data/cogvid_preproc_bottom_latents"
 CAPTION_COLUMN="prompts.txt"
 VIDEO_COLUMN="videos.txt"
 
@@ -54,7 +54,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --max_num_frames 29 \
           --train_batch_size 8 \
           --max_train_steps $steps \
-          --checkpointing_steps 500 \
+          --checkpointing_steps 250 \
           --gradient_accumulation_steps 1 \
           --gradient_checkpointing \
           --learning_rate $learning_rate \
@@ -63,7 +63,6 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --lr_num_cycles 1 \
           --enable_slicing \
           --enable_tiling \
-          --noised_image_dropout 0.05 \
           --optimizer $optimizer \
           --beta1 0.9 \
           --beta2 0.95 \
@@ -72,6 +71,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --allow_tf32 \
           --report_to wandb \
           --load_tensors \
+          --condition_frames_dropout 0.25\
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"

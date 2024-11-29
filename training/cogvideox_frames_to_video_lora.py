@@ -766,8 +766,11 @@ def main(args):
                 if args.add_last_frame:
                     image_latents[:, -1] = video_latents[:, -1].clone()
 
-                if random.random() < args.noised_image_dropout:
-                    image_latents = torch.zeros_like(image_latents)
+                # if random.random() < args.noised_image_dropout:
+                #     image_latents = torch.zeros_like(image_latents)
+
+                if random.random() < args.condition_frames_dropout:
+                    image_latents[:,1:] = torch.zeros_like(image_latents[:,1:])
 
                 # Encode prompts
                 if not args.load_tensors:

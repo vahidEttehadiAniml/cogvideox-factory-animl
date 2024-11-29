@@ -10,7 +10,7 @@ import os, json, tqdm, cv2, glob
 import shutil
 
 source_folder = '/media/vahid/DATA/data/animl_data/generated_video_data_processed'
-cogvid_data_path = '/media/vahid/DATA/data/animl_data/cogvid_preproc_sub'
+cogvid_data_path = '/media/vahid/DATA/data/animl_data/cogvid_preproc_bottom'
 
 
 rename_paths = True
@@ -158,25 +158,28 @@ for obj_name in tqdm.tqdm(obj_list):
                     vid_path = f"{obj_dir}/video_gen_data/{traj}/gs.mp4"
                     new_vid_path = f"{new_obj_dir}/{cnt:02d}_gs_center_to_{end_pos}.mp4"
                     new_vid_rev_path = f"{new_obj_dir}/{cnt:02d}_gs_{traj_names_rev[end_pos]}_to_center.mp4"
-                    shutil.copy(vid_path, new_vid_path)
-                    reverse_video(vid_path, new_vid_rev_path)
-                    if os.path.isfile(new_vid_path):
-                        metadata_item = {}
-                        metadata_item['video'] = new_vid_path
-                        metadata_item['text'] = vid_caption
-                        metadata_item['latent'] = new_vid_path.replace('.mp4','_latent_384p.pt')
-                        metadata_item['text_fea'] = new_vid_path.replace('.mp4','_feat_384p.pt')
-                        metadata_list.append(metadata_item)
-                    if os.path.isfile(new_vid_rev_path):
-                        metadata_item_rev = {}
-                        metadata_item_rev['video'] = new_vid_rev_path
-                        metadata_item_rev['text'] = vid_caption_reverse
-                        metadata_item_rev['latent'] = new_vid_rev_path.replace('.mp4','_latent_384p.pt')
-                        metadata_item_rev['text_fea'] = new_vid_rev_path.replace('.mp4','_feat_384p.pt')
-                        metadata_list.append(metadata_item_rev)
+                    if 'Camera trajectory is toward the bottom.' in vid_caption:
+                        shutil.copy(vid_path, new_vid_path)
+                        if os.path.isfile(new_vid_path):
+                            metadata_item = {}
+                            metadata_item['video'] = new_vid_path
+                            metadata_item['text'] = vid_caption
+                            metadata_item['latent'] = new_vid_path.replace('.mp4','_latent_384p.pt')
+                            metadata_item['text_fea'] = new_vid_path.replace('.mp4','_feat_384p.pt')
+                            metadata_list.append(metadata_item)
+                    if 'Camera trajectory is toward the bottom.' in vid_caption_reverse:
+                        reverse_video(vid_path, new_vid_rev_path)
+                        if os.path.isfile(new_vid_rev_path):
+                            metadata_item_rev = {}
+                            metadata_item_rev['video'] = new_vid_rev_path
+                            metadata_item_rev['text'] = vid_caption_reverse
+                            metadata_item_rev['latent'] = new_vid_rev_path.replace('.mp4','_latent_384p.pt')
+                            metadata_item_rev['text_fea'] = new_vid_rev_path.replace('.mp4','_feat_384p.pt')
+                            metadata_list.append(metadata_item_rev)
 
 output_path = f'{cogvid_data_path}/metadata.jsonl'
-# save_to_jsonl(metadata_list, output_path)
+save_to_jsonl(metadata_list, output_path)
+
 prompt_txt_path = f'{cogvid_data_path}/prompt.txt'
 vid_txt_path = f'{cogvid_data_path}/videos.txt'
 sub_prompt_txt_path = f'{cogvid_data_path}/sub_prompt.txt'
@@ -191,12 +194,12 @@ if rename_paths:
     for smp in tqdm.tqdm(samples):
         video_list.append(smp['video'].replace(cogvid_data_path, new_path)[1:])
         prompt_list.append(smp['text'])
-        if 'sneaker' in smp['text'] or 'shoe' in smp['text'] or 'boot' in smp['text']:
-            sub_video_list.append(video_list[-1])
-            sub_prompt_list.append(prompt_list[-1])
+        # if 'sneaker' in smp['text'] or 'shoe' in smp['text'] or 'boot' in smp['text']:
+        #     sub_video_list.append(video_list[-1])
+        #     sub_prompt_list.append(prompt_list[-1])
 
 
     save_list_to_txt(prompt_txt_path, prompt_list)
     save_list_to_txt(vid_txt_path, video_list)
-    save_list_to_txt(sub_prompt_txt_path, sub_prompt_list)
-    save_list_to_txt(sub_vid_txt_path, sub_video_list)
+    # save_list_to_txt(sub_prompt_txt_path, sub_prompt_list)
+    # save_list_to_txt(sub_vid_txt_path, sub_video_list)

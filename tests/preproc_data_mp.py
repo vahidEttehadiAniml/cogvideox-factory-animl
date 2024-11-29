@@ -4,7 +4,7 @@ import os, json, tqdm, cv2, glob, shutil
 from sympy.codegen.ast import continue_
 
 source_folder = '/media/vahid/DATA/data/animl_data/generated_video_data_processed'
-cogvid_data_path = '/media/vahid/DATA/data/animl_data/cogvid_preproc_sub'
+cogvid_data_path = '/media/vahid/DATA/data/animl_data/cogvid_preproc_bottom'
 
 
 rename_paths = True
@@ -72,8 +72,8 @@ def process_object(obj_name):
             with open(f"{obj_dir}/caption_llava.json") as f:
                 captions = json.load(f)
             if captions['qa'] == 'YES':
-                if not ('sneaker' in captions['caption'] or 'shoe' in captions['caption'] or 'boot' in captions['caption']):
-                    return []
+                # if not ('sneaker' in captions['caption'] or 'shoe' in captions['caption'] or 'boot' in captions['caption']):
+                #     return []
                 traj_list = os.listdir(f"{obj_dir}/video_gen_data")
                 for cnt, traj in enumerate(traj_list):
                     traj_name = traj.split('_')[:-1]
@@ -84,26 +84,31 @@ def process_object(obj_name):
                     vid_path = f"{obj_dir}/video_gen_data/{traj}/gs.mp4"
                     new_vid_path = f"{video_dir}/{obj_name[-5:]}_{cnt:02d}_gs_center_to_{end_pos}.mp4"
                     new_vid_rev_path = f"{video_dir}/{obj_name[-5:]}_{cnt:02d}_gs_{traj_names_rev[end_pos]}_to_center.mp4"
-                    shutil.copy(vid_path, new_vid_path)
-                    reverse_video(vid_path, new_vid_rev_path)
 
                     vid_cond_path = f"{obj_dir}/video_gen_data/{traj}/gengs.mp4"
                     new_vid_cond_path = f"{video_cond_dir}/{obj_name[-5:]}_{cnt:02d}_gs_center_to_{end_pos}.mp4"
                     new_vid_cond_rev_path = f"{video_cond_dir}/{obj_name[-5:]}_{cnt:02d}_gs_{traj_names_rev[end_pos]}_to_center.mp4"
-                    shutil.copy(vid_cond_path, new_vid_cond_path)
-                    reverse_video(vid_cond_path, new_vid_cond_rev_path)
-                    if os.path.isfile(new_vid_path):
-                        metadata.append({
-                            'video': new_vid_path.replace(cogvid_data_path,'')[1:],
-                            'text': vid_caption,
-                            'condition': new_vid_cond_path.replace(cogvid_data_path,'')[1:],
-                        })
-                    if os.path.isfile(new_vid_rev_path):
-                        metadata.append({
-                            'video': new_vid_rev_path.replace(cogvid_data_path,'')[1:],
-                            'text': vid_caption_reverse,
-                            'condition': new_vid_cond_rev_path.replace(cogvid_data_path,'')[1:],
-                        })
+
+                    if 'Camera trajectory is toward the bottom.' in vid_caption:
+                        shutil.copy(vid_path, new_vid_path)
+                        shutil.copy(vid_cond_path, new_vid_cond_path)
+                        if os.path.isfile(new_vid_path):
+                            metadata.append({
+                                'video': new_vid_path.replace(cogvid_data_path, '')[1:],
+                                'text': vid_caption,
+                                'condition': new_vid_cond_path.replace(cogvid_data_path, '')[1:],
+                            })
+
+                    if 'Camera trajectory is toward the bottom.' in vid_caption_reverse:
+                        reverse_video(vid_path, new_vid_rev_path)
+                        reverse_video(vid_cond_path, new_vid_cond_rev_path)
+                        if os.path.isfile(new_vid_rev_path):
+                            metadata.append({
+                                'video': new_vid_rev_path.replace(cogvid_data_path, '')[1:],
+                                'text': vid_caption_reverse,
+                                'condition': new_vid_cond_rev_path.replace(cogvid_data_path, '')[1:],
+                            })
+
     return metadata
 
 

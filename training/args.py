@@ -331,6 +331,12 @@ def _get_training_args(parser: argparse.ArgumentParser) -> None:
         help="Image condition dropout probability when finetuning image-to-video.",
     )
     parser.add_argument(
+        "--condition_frames_dropout",
+        type=float,
+        default=0.25,
+        help="Frames condition dropout probability when finetuning frames-to-video.",
+    )
+    parser.add_argument(
         "--ignore_learned_positional_embeddings",
         action="store_true",
         default=False,

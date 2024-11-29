@@ -5,16 +5,16 @@ MODEL_ID="THUDM/CogVideoX-2b"
 NUM_GPUS=8
 
 # For more details on the expected data format, please refer to the README.
-DATA_ROOT="/mnt/data/cogvid_preproc_sub"  # This needs to be the path to the base directory where your videos are located.
+DATA_ROOT="/mnt/data/cogvid_preproc_bottom"  # This needs to be the path to the base directory where your videos are located.
 CAPTION_COLUMN="prompt.txt"
 VIDEO_COLUMN="videos.txt"
-OUTPUT_DIR="/mnt/data/cogvid_preproc_sub_latents"
+OUTPUT_DIR="/mnt/data/cogvid_preproc_bottom_latents"
 #HEIGHT_BUCKETS="480 720"
 #WIDTH_BUCKETS="720 960"
-HEIGHT_BUCKETS="1024"
-WIDTH_BUCKETS="1024"
-FRAME_BUCKETS="17"
-MAX_NUM_FRAMES="17"
+HEIGHT_BUCKETS="480"
+WIDTH_BUCKETS="720"
+FRAME_BUCKETS="29"
+MAX_NUM_FRAMES="29"
 MAX_SEQUENCE_LENGTH=226
 TARGET_FPS=8
 BATCH_SIZE=8

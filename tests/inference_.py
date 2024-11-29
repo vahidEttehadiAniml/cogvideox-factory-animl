@@ -8,19 +8,20 @@ from diffusers import AutoencoderKLCogVideoX, CogVideoXVideoToVideoPipeline, Cog
 from transformers import T5EncoderModel
 num_frames = 17
 use_noise_condition = False
-traj = 'take_0.0/top_left'
-cap_id = 'prod_michael_yfr0WaE7EbA2vbe64CVg_blue_urn_with_emblem_180_NDPSvIHueedKAC3Yau5U'
-prompt = "camera trajectory to left, High quality, ultrarealistic detail and breath-taking movie-like camera shot."
+traj = '2/bottom'
+cap_id = 'dev/superuser_z7v9nureXRtGqa2aJl9K/white_supplement_bottle_quick_180_OdEIJAO2nSZAL3jwGoIz'
+prompt = "camera trajectory to bottom, High quality, ultrarealistic detail and breath-taking movie-like camera shot."
 negative_prompt = 'blurry, low-quality'
 
-# imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/{cap_id}/video_gen_data/{traj}/gengs'
-# img_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/{cap_id}/video_gen_data/{traj}/gs/000.png'
-# img_path_last = f'/media/vahid/DATA/data/animl_data/generated_video_data_processed/{cap_id}/video_gen_data/{traj}/gs/{num_frames-1:03d}.png'
-imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gengs'
-img_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/000.png'
-img_path_last = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/{num_frames-1:03d}.png'
+imgs_path = f'/media/vahid/DATA/data/animl_data/trainings/{cap_id}/models/object/novel_views/{traj}/gs'
+img_path = f'{imgs_path}/001.png'
 
-img_size = 768
+# imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gengs'
+# img_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/000.png'
+# img_path_last = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/{num_frames-1:03d}.png'
+# img_path = '/home/vahid/Downloads/replicate-prediction-gdfvxcx8ynrj60ckehav4e1bxg.png'
+
+img_size = 512
 
 video_inp = []
 for n, im_path in enumerate(sorted(glob.glob(f"{imgs_path}/*.png"))):
@@ -32,13 +33,12 @@ for n in range(len(video_inp), num_frames):
     video_inp.append(image)
 
 image = load_image(img_path).resize((img_size,img_size))
-image_last = load_image(img_path_last).resize((img_size,img_size))
 
 cap_id = cap_id.replace('/','_')
 traj = traj.replace('/','_')
 
 # export_to_video([image]+[image_last]+video_inp[:num_frames], f"input_vid_gengs_{traj}.mp4", fps=8)
-export_to_video([image]+video_inp[:num_frames], f"input_{cap_id[-5:]}_{traj}.mp4", fps=8)
+export_to_video([image]+video_inp[:num_frames], f"outputs/input_{cap_id[-5:]}_{traj}_gs.mp4", fps=8)
 
 
 # img_list = sorted(glob.glob(f"{imgs_path}/*.png"))
@@ -56,9 +56,9 @@ export_to_video([image]+video_inp[:num_frames], f"input_{cap_id[-5:]}_{traj}.mp4
 #     video_inp_lora.append(image)
 
 # vae = AutoencoderKLCogVideoX.from_pretrained("THUDM/CogVideoX-5b-I2V", subfolder="vae", torch_dtype=torch.bfloat16)
-pipe = CogVideoXFramesToVideoPipeline.from_pretrained("/media/vahid/DATA/projects/CogVideo/models/CogVideoX1.5-5B-I2V", torch_dtype=torch.bfloat16).to("cuda")
+pipe = CogVideoXFramesToVideoPipeline.from_pretrained("/media/vahid/DATA/projects/CogVideo/models/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
 # pipe = CogVideoXVideoToVideoPipeline.from_pretrained("THUDM/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
-lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora__optimizer_adamw__steps_4500__lr-schedule_cosine_with_restarts__learning-rate_2e-4/checkpoint-2000"
+lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora__optimizer_adamw__steps_4500__lr-schedule_cosine_with_restarts__learning-rate_2e-4/checkpoint-3500"
 lora_rank = 256
 lora_alpha = 256
 lora_scaling = lora_alpha / lora_rank
@@ -77,13 +77,13 @@ pipe.vae.enable_tiling()
 # video = pipe(image, prompt, num_frames=num_frames, use_dynamic_cfg=True)
 
 video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt, num_frames=num_frames,
-             height=img_size, width=img_size, use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
+             height=480, width=720, use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 # video = pipe([image, image_last], frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
 #                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 vid_out = []
 for v in video.frames[0]:
     vid_out.append(v.resize((img_size,img_size)))
-export_to_video(vid_out, f"output_{cap_id[-5:]}_{traj}.mp4", fps=8)
+export_to_video(vid_out, f"outputs/output_{cap_id[-5:]}_{traj}_gs.mp4", fps=8)
 
 # video = pipe(image, frames=video_inp_lora[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
 #                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=True)
