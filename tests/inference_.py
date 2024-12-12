@@ -6,14 +6,16 @@ from diffusers.utils import export_to_video, load_image, load_video
 
 from diffusers import AutoencoderKLCogVideoX, CogVideoXVideoToVideoPipeline, CogVideoXTransformer3DModel, CogVideoXDPMScheduler
 from transformers import T5EncoderModel
-num_frames = 17
+num_frames = 33
 use_noise_condition = False
-traj = '2/bottom'
-cap_id = 'dev/superuser_z7v9nureXRtGqa2aJl9K/white_supplement_bottle_quick_180_OdEIJAO2nSZAL3jwGoIz'
-prompt = "camera trajectory to bottom, High quality, ultrarealistic detail and breath-taking movie-like camera shot."
+infer_img = 'real'
+
+traj = '0/bottom'
+cap_id = 'prod/janknaepen_hIzfZEFUO2xhTkR0EOHn/Air_Jordan_1_Zoom_Air_CMFT_hfJ2Q7MUmcsYTjzSAinh'
+prompt = "A nice Air-jordan sneaker on the beach under heavy sun while camera trajectory to bottom, High quality, ultrarealistic detail and breath-taking movie-like camera shot."
 negative_prompt = 'blurry, low-quality'
 
-imgs_path = f'/media/vahid/DATA/data/animl_data/trainings/{cap_id}/models/object/novel_views/{traj}/gs'
+imgs_path = f'/media/vahid/DATA/data/animl_data/trainings/{cap_id}/novel_views/novel_views/{traj}/gs_main'
 img_path = f'{imgs_path}/001.png'
 
 # imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gengs'
@@ -38,7 +40,7 @@ cap_id = cap_id.replace('/','_')
 traj = traj.replace('/','_')
 
 # export_to_video([image]+[image_last]+video_inp[:num_frames], f"input_vid_gengs_{traj}.mp4", fps=8)
-export_to_video([image]+video_inp[:num_frames], f"outputs/input_{cap_id[-5:]}_{traj}_gs.mp4", fps=8)
+export_to_video([image]+video_inp[:num_frames], f"outputs/input_{cap_id[-5:]}_{traj}_{infer_img}.mp4", fps=8)
 
 
 # img_list = sorted(glob.glob(f"{imgs_path}/*.png"))
@@ -58,7 +60,7 @@ export_to_video([image]+video_inp[:num_frames], f"outputs/input_{cap_id[-5:]}_{t
 # vae = AutoencoderKLCogVideoX.from_pretrained("THUDM/CogVideoX-5b-I2V", subfolder="vae", torch_dtype=torch.bfloat16)
 pipe = CogVideoXFramesToVideoPipeline.from_pretrained("/media/vahid/DATA/projects/CogVideo/models/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
 # pipe = CogVideoXVideoToVideoPipeline.from_pretrained("THUDM/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
-lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora__optimizer_adamw__steps_4500__lr-schedule_cosine_with_restarts__learning-rate_2e-4/checkpoint-3500"
+lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora_V1_optimizer_adamw__steps_4500__lr-schedule_cosine_with_restarts__learning-rate_2e-4/checkpoint-4500"
 lora_rank = 256
 lora_alpha = 256
 lora_scaling = lora_alpha / lora_rank
@@ -83,7 +85,7 @@ video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_promp
 vid_out = []
 for v in video.frames[0]:
     vid_out.append(v.resize((img_size,img_size)))
-export_to_video(vid_out, f"outputs/output_{cap_id[-5:]}_{traj}_gs.mp4", fps=8)
+export_to_video(vid_out, f"outputs/output_{cap_id[-5:]}_{traj}_{infer_img}.mp4", fps=8)
 
 # video = pipe(image, frames=video_inp_lora[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
 #                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=True)
