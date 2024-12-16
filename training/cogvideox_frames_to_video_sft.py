@@ -134,6 +134,7 @@ Please adhere to the licensing terms as described [here](https://huggingface.co/
     )
     tags = [
         "text-to-video",
+        "image-to-video",
         "diffusers-training",
         "diffusers",
         "cogvideox",
@@ -149,7 +150,6 @@ def log_validation(
     pipe: CogVideoXFramesToVideoPipeline,
     args: Dict[str, Any],
     pipeline_args: Dict[str, Any],
-    epoch,
     is_final_validation: bool = False,
 ):
     logger.info(
@@ -363,7 +363,6 @@ def main(args):
         variant=args.variant,
     )
 
-    # These changes will also be required when trying to run inference with the trained lora
     if args.ignore_learned_positional_embeddings:
         del transformer.patch_embed.pos_embedding
         transformer.patch_embed.use_learned_positional_embeddings = False
@@ -383,13 +382,14 @@ def main(args):
     if args.enable_tiling:
         vae.enable_tiling()
 
-    # We only train the additional adapter LoRA layers
     text_encoder.requires_grad_(False)
     vae.requires_grad_(False)
     transformer.requires_grad_(True)
 
     VAE_SCALING_FACTOR = vae.config.scaling_factor
     VAE_SCALE_FACTOR_SPATIAL = 2 ** (len(vae.config.block_out_channels) - 1)
+    RoPE_BASE_HEIGHT = transformer.config.sample_height * VAE_SCALE_FACTOR_SPATIAL
+    RoPE_BASE_WIDTH = transformer.config.sample_width * VAE_SCALE_FACTOR_SPATIAL
 
     # For mixed precision training we cast all non-trainable weights (vae, text_encoder and transformer) to half-precision
     # as these weights are only used for inference, keeping weights in full precision is not required.
@@ -430,7 +430,6 @@ def main(args):
         if accelerator.is_main_process:
             for model in models:
                 if isinstance(unwrap_model(accelerator, model), type(unwrap_model(accelerator, transformer))):
-                    model: CogVideoXTransformer3DModel
                     model = unwrap_model(accelerator, model)
                     model.save_pretrained(
                         os.path.join(output_dir, "transformer"), safe_serialization=True, max_shard_size="5GB"
@@ -488,7 +487,6 @@ def main(args):
 
     # Make sure the trainable params are in float32.
     if args.mixed_precision == "fp16":
-        # only upcast trainable parameters (LoRA) into fp32
         cast_training_params([transformer], dtype=torch.float32)
 
     transformer_parameters = list(filter(lambda p: p.requires_grad, transformer.parameters()))
@@ -681,9 +679,9 @@ def main(args):
 
     for epoch in range(first_epoch, args.num_train_epochs):
         transformer.train()
-
         for step, batch in enumerate(train_dataloader):
             models_to_accumulate = [transformer]
+            logs = {}
 
             with accelerator.accumulate(models_to_accumulate):
                 images = batch["images"].to(accelerator.device, non_blocking=True)
@@ -762,8 +760,11 @@ def main(args):
                         num_frames=num_frames,
                         vae_scale_factor_spatial=VAE_SCALE_FACTOR_SPATIAL,
                         patch_size=model_config.patch_size,
+                        patch_size_t=model_config.patch_size_t if hasattr(model_config, "patch_size_t") else None,
                         attention_head_dim=model_config.attention_head_dim,
                         device=accelerator.device,
+                        base_height=RoPE_BASE_HEIGHT,
+                        base_width=RoPE_BASE_WIDTH,
                     )
                     if model_config.use_rotary_positional_embeddings
                     else None
@@ -777,12 +778,15 @@ def main(args):
                     noisy_video_latents = scheduler.add_noise(video_latents, noise, timesteps)
 
                 noisy_model_input = torch.cat([noisy_video_latents, image_latents], dim=2)
-
+                model_config.patch_size_t if hasattr(model_config, "patch_size_t") else None,
+                ofs_embed_dim = model_config.ofs_embed_dim if hasattr(model_config, "ofs_embed_dim") else None,
+                ofs_emb = None if ofs_embed_dim is None else noisy_model_input.new_full((1,), fill_value=2.0)
                 # Predict the noise residual
                 model_output = transformer(
                     hidden_states=noisy_model_input,
                     encoder_hidden_states=prompt_embeds,
                     timestep=timesteps,
+                    ofs=ofs_emb,
                     image_rotary_emb=image_rotary_emb,
                     return_dict=False,
                 )[0]
@@ -806,7 +810,12 @@ def main(args):
                     gradient_norm_before_clip = get_gradient_norm(transformer.parameters())
                     accelerator.clip_grad_norm_(transformer.parameters(), args.max_grad_norm)
                     gradient_norm_after_clip = get_gradient_norm(transformer.parameters())
-
+                    logs.update(
+                        {
+                            "gradient_norm_before_clip": gradient_norm_before_clip,
+                            "gradient_norm_after_clip": gradient_norm_after_clip,
+                        }
+                    )
                 if accelerator.state.deepspeed_plugin is None:
                     optimizer.step()
                     optimizer.zero_grad()
@@ -854,15 +863,12 @@ def main(args):
                     run_validation(args, accelerator, transformer, scheduler, model_config, weight_dtype)
 
             last_lr = lr_scheduler.get_last_lr()[0] if lr_scheduler is not None else args.learning_rate
-            logs = {"loss": loss.detach().item(), "lr": last_lr}
-            # gradnorm + deepspeed: https://github.com/microsoft/DeepSpeed/issues/4555
-            if accelerator.distributed_type != DistributedType.DEEPSPEED:
-                logs.update(
-                    {
-                        "gradient_norm_before_clip": gradient_norm_before_clip,
-                        "gradient_norm_after_clip": gradient_norm_after_clip,
-                    }
-                )
+            logs.update(
+                {
+                    "loss": loss.detach().item(),
+                    "lr": last_lr,
+                }
+            )
             progress_bar.set_postfix(**logs)
             accelerator.log(logs, step=global_step)
 
@@ -875,7 +881,6 @@ def main(args):
             )
             if should_run_validation:
                 run_validation(args, accelerator, transformer, scheduler, model_config, weight_dtype)
-
     accelerator.wait_for_everyone()
 
     if accelerator.is_main_process:
