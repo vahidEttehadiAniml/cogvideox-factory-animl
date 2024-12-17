@@ -238,11 +238,11 @@ def run_validation(
     validation_images = args.validation_images.split(args.validation_prompt_separator)
     for validation_image, validation_prompt in zip(validation_images, validation_prompts):
         all_frames = load_video(validation_image)
+        video_cond = all_frames[2:]
         if args.add_last_frame:
             image_inp = all_frames[:2]
         else:
             image_inp = all_frames[0]
-        video_cond = all_frames[2:]
         pipeline_args = {
             "image": image_inp,
             "frames": video_cond,
@@ -768,6 +768,8 @@ def main(args):
 
                 if args.add_last_frame:
                     image_latents[:, -1] = video_latents[:, -1].clone()
+                    image_latents[:, 1:-1] *= 0.0    ### no guide in the first and last frames conditions. It might change.
+
 
                 # if random.random() < args.noised_image_dropout:
                 #     image_latents = torch.zeros_like(image_latents)
@@ -994,11 +996,11 @@ def main(args):
             validation_images = args.validation_images.split(args.validation_prompt_separator)
             for validation_image, validation_prompt in zip(validation_images, validation_prompts):
                 all_frames = load_video(validation_image)
+                video_cond = all_frames[2:]
                 if args.add_last_frame:
                     image_inp = all_frames[:2]
                 else:
                     image_inp = all_frames[0]
-                video_cond = all_frames[2:]
                 pipeline_args = {
                     "image": image_inp,
                     "frames": video_cond,

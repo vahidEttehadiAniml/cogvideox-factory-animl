@@ -28,7 +28,7 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
   for lr_schedule in "${LR_SCHEDULES[@]}"; do
     for optimizer in "${OPTIMIZERS[@]}"; do
       for steps in "${MAX_TRAIN_STEPS[@]}"; do
-        output_dir="/mnt/data/cogvideox-factory-animl/runs/cogvideox-lora__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
+        output_dir="/mnt/data/cogvideox-factory-animl/runs/cogvideox-lora-v1.5__optimizer_${optimizer}__steps_${steps}__lr-schedule_${lr_schedule}__learning-rate_${learning_rate}/"
 
         cmd="accelerate launch --config_file $ACCELERATE_CONFIG_FILE --gpu_ids $GPU_IDS training/cogvideox_frames_to_video_lora.py \
           --pretrained_model_name_or_path THUDM/CogVideoX1.5-5B-I2V \
@@ -72,7 +72,6 @@ for learning_rate in "${LEARNING_RATES[@]}"; do
           --allow_tf32 \
           --report_to wandb \
           --load_tensors \
-          --add_last_frame \
           --nccl_timeout 1800"
         
         echo "Running command: $cmd"
