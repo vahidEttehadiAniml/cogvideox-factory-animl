@@ -56,5 +56,5 @@ def process_jsonl_file(input_file, output_dir='output'):
 
 # Example usage
 if __name__ == "__main__":
-    output_dir = "/mnt/data/cogvid_preproc_sub_latents"
+    output_dir = "/data2/data/cogvid_preproc_sneakers_latents"
     process_jsonl_file(f'{output_dir}/data.jsonl',output_dir=output_dir)
