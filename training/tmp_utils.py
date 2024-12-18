@@ -21,8 +21,8 @@ def process_jsonl_file(input_file, output_dir='output'):
     os.makedirs(output_dir, exist_ok=True)
 
     # Paths for output files
-    prompts_file = os.path.join(output_dir, 'prompts_bottom.txt')
-    videos_file = os.path.join(output_dir, 'videos_bottom.txt')
+    prompts_file = os.path.join(output_dir, 'prompts.txt')
+    videos_file = os.path.join(output_dir, 'videos.txt')
 
     # Open files for writing
     with open(input_file, 'r') as jsonl_file, \
@@ -39,10 +39,10 @@ def process_jsonl_file(input_file, output_dir='output'):
                 prompt = data.get('prompt', '')
                 video_path = data.get('video', '')
 
-                if 'Camera trajectory is toward the bottom.' in prompt:
-                    # Write to respective files
-                    prompts_out.write(f"{prompt}\n")
-                    videos_out.write(f"{video_path}\n")
+                # if 'Camera trajectory is toward the bottom.' in prompt:
+                #     # Write to respective files
+                prompts_out.write(f"{prompt}\n")
+                videos_out.write(f"{video_path}\n")
 
             except json.JSONDecodeError:
                 print(f"Error decoding JSON on line {line_num}. Skipping.")
