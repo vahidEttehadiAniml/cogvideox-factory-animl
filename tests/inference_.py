@@ -14,8 +14,7 @@ traj = '0/bottom'
 cap_id = 'prod/janknaepen_hIzfZEFUO2xhTkR0EOHn/Air_Jordan_1_Zoom_Air_CMFT_hfJ2Q7MUmcsYTjzSAinh'
 prompt = "A nice Air-jordan sneaker on the beach under heavy sun while camera trajectory to bottom, High quality, ultrarealistic detail and breath-taking movie-like camera shot."
 negative_prompt = 'blurry, low-quality'
-
-imgs_path = f'/media/vahid/DATA/data/animl_data/trainings/{cap_id}/novel_views/novel_views/{traj}/gs_main'
+imgs_path = f'/media/vahid/DATA/data/animl_data/trainings/{cap_id}/aug_views/novel_views_0/{traj}/gs_main'
 img_path = f'{imgs_path}/001.png'
 
 # imgs_path = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gengs'
@@ -23,7 +22,7 @@ img_path = f'{imgs_path}/001.png'
 # img_path_last = f'/media/vahid/DATA/data/animl_data/generated_video_data_trainset/{cap_id}/video_gen_data/{traj}/gs/{num_frames-1:03d}.png'
 # img_path = '/home/vahid/Downloads/replicate-prediction-gdfvxcx8ynrj60ckehav4e1bxg.png'
 
-img_size = 512
+img_size = 1024
 
 video_inp = []
 for n, im_path in enumerate(sorted(glob.glob(f"{imgs_path}/*.png"))):
@@ -57,8 +56,11 @@ export_to_video([image]+video_inp[:num_frames], f"outputs/input_{cap_id[-5:]}_{t
 # for n in range(len(video_inp_lora), num_frames):
 #     video_inp_lora.append(image)
 
+# model_path = "/media/vahid/DATA/projects/CogVideo/models/CogVideoX-5b-I2V"
+model_path = "/media/vahid/DATA/projects/CogVideo/models/CogVideoX1.5-5B-I2V"
+
 # vae = AutoencoderKLCogVideoX.from_pretrained("THUDM/CogVideoX-5b-I2V", subfolder="vae", torch_dtype=torch.bfloat16)
-pipe = CogVideoXFramesToVideoPipeline.from_pretrained("/media/vahid/DATA/projects/CogVideo/models/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
+pipe = CogVideoXFramesToVideoPipeline.from_pretrained(model_path, torch_dtype=torch.bfloat16).to("cuda")
 # pipe = CogVideoXVideoToVideoPipeline.from_pretrained("THUDM/CogVideoX-5b-I2V", torch_dtype=torch.bfloat16).to("cuda")
 lora_path = "/media/vahid/DATA/projects/cogvideox-factory/runs/cogvideox-lora_V1_optimizer_adamw__steps_4500__lr-schedule_cosine_with_restarts__learning-rate_2e-4/checkpoint-4500"
 lora_rank = 256
@@ -79,7 +81,7 @@ pipe.vae.enable_tiling()
 # video = pipe(image, prompt, num_frames=num_frames, use_dynamic_cfg=True)
 
 video = pipe(image, frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt, num_frames=num_frames,
-             height=480, width=720, use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
+             height=1024, width=1024, use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 # video = pipe([image, image_last], frames=video_inp[:num_frames], prompt=prompt, negative_prompt=negative_prompt,
 #                           use_dynamic_cfg=True, num_inference_steps=50, use_noise_condition=use_noise_condition)
 vid_out = []
