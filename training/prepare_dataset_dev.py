@@ -24,7 +24,7 @@ from transformers import T5EncoderModel, T5Tokenizer
 
 import decord  # isort:skip
 
-from dataset import BucketSampler, VideoDatasetWithResizing, VideoDatasetWithResizeAndRectangleCrop  # isort:skip
+from training.cogvideox.dataset import BucketSampler, VideoDatasetWithResizing, VideoDatasetWithResizeAndRectangleCrop  # isort:skip
 
 
 decord.bridge.set_bridge("torch")

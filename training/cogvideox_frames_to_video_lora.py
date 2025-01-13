@@ -768,7 +768,8 @@ def main(args):
 
                 if args.add_last_frame:
                     image_latents[:, -1] = video_latents[:, -1].clone()
-                    image_latents[:, 1:-1] *= 0.0    ### no guide in the first and last frames conditions. It might change.
+                    if random.random() < args.condition_frames_dropout:
+                        image_latents[:, 1:-1] *= 0.0    ### no guide in the first and last frames conditions. It might change.
 
 
                 # if random.random() < args.noised_image_dropout:

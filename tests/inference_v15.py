@@ -136,7 +136,7 @@ negative_prompt = 'blurry, low-quality'
 imgs_path = f'/media/vahid/DATA/data/animl_data/trainings/{cap_id}/aug_views/novel_views_0/{traj}/gs_main'
 img_path = f'{imgs_path}/001.png'
 
-img_size = 2048
+img_size = 1024
 
 # video_inp = []
 # for n, im_path in enumerate(sorted(glob.glob(f"{imgs_path}/*.png"))):
