@@ -124,10 +124,12 @@ class VideoDataset(Dataset):
             # The VAE's temporal compression ratio is 4.
             # The VAE's spatial compression ratio is 8.
             latent_num_frames = video_latents.size(1)
-            # if latent_num_frames % 2 == 0:
-            #     num_frames = latent_num_frames * 4
-            # else:
-            num_frames = (latent_num_frames - 1) * 4 + 1
+            if latent_num_frames % 2 == 0:
+                num_frames = latent_num_frames * 4
+            else:
+                image_latents = image_latents[:,:-1]
+                video_latents = video_latents[:,:-1]
+                num_frames = (latent_num_frames - 1) * 4 + 1
 
             height = video_latents.size(2) * 8
             width = video_latents.size(3) * 8
