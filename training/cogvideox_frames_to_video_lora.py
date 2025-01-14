@@ -53,10 +53,10 @@ from tqdm.auto import tqdm
 from transformers import AutoTokenizer, T5EncoderModel
 
 
-from args import get_args  # isort:skip
-from dataset import BucketSampler, VideoDatasetWithResizing, VideoDatasetWithResizeAndRectangleCrop  # isort:skip
-from text_encoder import compute_prompt_embeddings  # isort:skip
-from utils import (
+from cogvideox.args import get_args  # isort:skip
+from cogvideox.dataset import BucketSampler, VideoDatasetWithResizing, VideoDatasetWithResizeAndRectangleCrop  # isort:skip
+# from text_encoder import compute_prompt_embeddings  # isort:skip
+from cogvideox.utils import (
     get_gradient_norm,
     get_optimizer,
     prepare_rotary_positional_embeddings,
