@@ -766,7 +766,7 @@ def main(args):
                     image_latents[:,0] = video_latents[:,0].clone()
 
                 if random.random() < args.condition_frames_dropout:
-                    image_latents[:,1:] = torch.zeros_like(image_latents[:,1:])
+                    image_latents[:,1:-1] = torch.zeros_like(image_latents[:,1:-1])
 
                 if args.add_last_frame:
                     image_latents[:, -1] = video_latents[:, -1].clone()
