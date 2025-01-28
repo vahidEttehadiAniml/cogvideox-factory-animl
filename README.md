@@ -12,7 +12,9 @@ FineTrainers is a work-in-progress library to support (accessible) training of v
 
 ## News
 
-- 🔥 **2024-12-20**: Support for T2V LoRA finetuning of [CogVideoX](https://huggingface.co/docs/diffusers/main/api/pipelines/cogvideox) added! 
+- 🔥 **2024-01-15**: Support for naive FP8 weight-casting training added! This allows training HunyuanVideo in under 24 GB upto specific resolutions.
+- 🔥 **2024-01-13**: Support for T2V full-finetuning added! Thanks to @ArEnSc for taking up the initiative!
+- 🔥 **2024-01-03**: Support for T2V LoRA finetuning of [CogVideoX](https://huggingface.co/docs/diffusers/main/api/pipelines/cogvideox) added! 
 - 🔥 **2024-12-20**: Support for T2V LoRA finetuning of [Hunyuan Video](https://huggingface.co/docs/diffusers/main/api/pipelines/hunyuan_video) added! We would like to thank @SHYuanBest for his work on a training script [here](https://github.com/huggingface/diffusers/pull/10254).
 - 🔥 **2024-12-18**: Support for T2V LoRA finetuning of [LTX Video](https://huggingface.co/docs/diffusers/main/api/pipelines/ltx_video) added!
 
@@ -24,7 +26,7 @@ FineTrainers is a work-in-progress library to support (accessible) training of v
 
 ## Quickstart
 
-Clone the repository and make sure the requirements are installed: `pip install -r requirements.txt` and install `diffusers` from source by `pip install git+https://github.com/huggingface/diffusers`.
+Clone the repository and make sure the requirements are installed: `pip install -r requirements.txt` and install `diffusers` from source by `pip install git+https://github.com/huggingface/diffusers`. The requirements specify `diffusers>=0.32.1`, but it is always recommended to use the `main` branch for the latest features and bugfixes.
 
 Then download a dataset:
 
@@ -43,6 +45,8 @@ Then launch LoRA fine-tuning. Below we provide an example for LTX-Video. We refe
 <details>
 <summary>Training command</summary>
 
+TODO: LTX does not do too well with the disney dataset. We will update this to use a better example soon.
+
 ```bash
 #!/bin/bash
 export WANDB_MODE="offline"
@@ -53,7 +57,7 @@ export FINETRAINERS_LOG_LEVEL=DEBUG
 GPU_IDS="0,1"
 
 DATA_ROOT="/path/to/video-dataset-disney"
-CAPTION_COLUMN="prompts.txt"
+CAPTION_COLUMN="prompt.txt"
 VIDEO_COLUMN="videos.txt"
 OUTPUT_DIR="/path/to/output/directory/ltx-video/ltxv_disney"
 
@@ -75,18 +79,17 @@ dataset_cmd="--data_root $DATA_ROOT \
 dataloader_cmd="--dataloader_num_workers 0"
 
 # Diffusion arguments
-diffusion_cmd="--flow_resolution_shifting"
+diffusion_cmd="--flow_weighting_scheme logit_normal"
 
 # Training arguments
 training_cmd="--training_type lora \
   --seed 42 \
-  --mixed_precision bf16 \
   --batch_size 1 \
-  --train_steps 1200 \
+  --train_steps 3000 \
   --rank 128 \
   --lora_alpha 128 \
   --target_modules to_q to_k to_v to_out.0 \
-  --gradient_accumulation_steps 1 \
+  --gradient_accumulation_steps 4 \
   --gradient_checkpointing \
   --checkpointing_steps 500 \
   --checkpointing_limit 2 \
@@ -135,15 +138,16 @@ For inference, refer [here](./docs/training/ltx_video.md#inference). For docs re
 
 <div align="center">
 
-| Model Name | Tasks                | Ckpts Tested                                                                                                                                         | Min. GPU<br>VRAM | Comments                                                     |
-|:------------:|:---------------------:|:------------------------------------------------------------------------------------------------------------------------------------------------------:|:----------------------:|:--------------------------------------------------------------:|
-| [LTX-Video](https://huggingface.co/docs/diffusers/main/api/pipelines/ltx_video) | <ul><li>T2V ✅</li><li> I2V ❌</li></ul> | [Lightricks/LTX-Video](https://huggingface.co/Lightricks/LTX-Video)                                                                                 | 11 GB                | Fast to train                                                 |
-| [HunyuanVideo](https://huggingface.co/docs/diffusers/main/api/pipelines/hunyuan_video) | <ul><li>T2V ✅</li><li> I2V ❌</li></ul> | [tencent/HunyuanVideo](https://huggingface.co/tencent/HunyuanVideo)                                                                                 | 42 GB                 | -                                                            |
-| [CogVideoX](https://huggingface.co/docs/diffusers/main/api/pipelines/cogvideox) | <ul><li>T2V ✅</li><li> I2V ❌</li></ul> | <ul><li>[THUDM/CogVideoX1.5-5B](https://huggingface.co/THUDM/CogVideoX1.5-5B)</li><li>[THUDM/CogVideoX-5b](https://huggingface.co/THUDM/CogVideoX-5b)</li><li>[THUDM/CogVideoX-2b](https://huggingface.co/THUDM/CogVideoX-2b)</li> | - GB                 | Training with multi-bucket, multi-resolution frames is supported. |
+| **Model Name**                                   | **Tasks**     | **Min. LoRA VRAM<sup>*</sup>**     | **Min. Full Finetuning VRAM<sup>^</sup>**     |
+|:------------------------------------------------:|:-------------:|:----------------------------------:|:---------------------------------------------:|
+| [LTX-Video](./docs/training/ltx_video.md)        | Text-to-Video | 5 GB                               | 21 GB                                         |
+| [HunyuanVideo](./docs/training/hunyuan_video.md) | Text-to-Video | 32 GB                              | OOM                                           |
+| [CogVideoX-5b](./docs/training/cogvideox.md)     | Text-to-Video | 18 GB                              | 53 GB                                         |
 
 </div>
 
-Note that the memory consumption in the table is reported with most of the options, discussed in [docs/training/optimizations](./docs/training/optimization.md), enabled.
+<sub><sup>*</sup>Noted for training-only, no validation, at resolution `49x512x768`, rank 128, with pre-computation, using **FP8** weights & gradient checkpointing. Pre-computation of conditions and latents may require higher limits (but typically under 16 GB).</sub><br/>
+<sub><sup>^</sup>Noted for training-only, no validation, at resolution `49x512x768`, with pre-computation, using **BF16** weights & gradient checkpointing.</sub>
 
 If you would like to use a custom dataset, refer to the dataset preparation guide [here](./docs/dataset/README.md).
 

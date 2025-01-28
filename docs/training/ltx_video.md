@@ -2,7 +2,7 @@
 
 ## Training
 
-Provided you have a dataset:
+For LoRA training, specify `--training_type lora`. For full finetuning, specify `--training_type full-finetune`.
 
 ```bash
 #!/bin/bash
@@ -36,18 +36,17 @@ dataset_cmd="--data_root $DATA_ROOT \
 dataloader_cmd="--dataloader_num_workers 0"
 
 # Diffusion arguments
-diffusion_cmd="--flow_resolution_shifting"
+diffusion_cmd="--flow_weighting_scheme logit_normal"
 
 # Training arguments
 training_cmd="--training_type lora \
   --seed 42 \
-  --mixed_precision bf16 \
   --batch_size 1 \
-  --train_steps 1200 \
+  --train_steps 3000 \
   --rank 128 \
   --lora_alpha 128 \
   --target_modules to_q to_k to_v to_out.0 \
-  --gradient_accumulation_steps 1 \
+  --gradient_accumulation_steps 4 \
   --gradient_checkpointing \
   --checkpointing_steps 500 \
   --checkpointing_limit 2 \
@@ -87,6 +86,12 @@ echo -ne "-------------------- Finished executing script --------------------\n\
 ```
 
 ## Memory Usage
+
+### LoRA
+
+> [!NOTE]
+>
+> The below measurements are done in `torch.bfloat16` precision. Memory usage can further be reduce by passing `--layerwise_upcasting_modules transformer` to the training script. This will cast the model weights to `torch.float8_e4m3fn` or `torch.float8_e5m2`, which halves the memory requirement for model weights. Computation is performed in the dtype set by `--transformer_dtype` (which defaults to `bf16`).
 
 LoRA with rank 128, batch size 1, gradient checkpointing, optimizer adamw, `49x512x768` resolution, **without precomputation**:
 
@@ -140,6 +145,31 @@ Training configuration: {
 
 Note: requires about `17.5` GB of VRAM with precomputation. If validation is not performed, the memory usage is reduced to `11` GB.
 
+### Full Finetuning
+
+```
+Training configuration: {
+    "trainable parameters": 1923385472,
+    "total samples": 1,
+    "train epochs": 10,
+    "train steps": 10,
+    "batches per device": 1,
+    "total batches observed per epoch": 1,
+    "train batch size": 1,
+    "gradient accumulation steps": 1
+}
+```
+
+| stage                         | memory_allocated | max_memory_reserved |
+|:-----------------------------:|:----------------:|:-------------------:|
+| after precomputing conditions | 8.89             | 8.937               |
+| after precomputing latents    | 9.701            | 11.615              |
+| before training start         | 3.583            | 4.025               |
+| after epoch 1                 | 10.769           | 20.357              |
+| before validation start       | 10.769           | 20.357              |
+| after validation end          | 10.769           | 28.332              |
+| after training end            | 10.769           | 12.904              |
+
 ## Inference
 
 Assuming your LoRA is saved and pushed to the HF Hub, and named `my-awesome-name/my-awesome-lora`, we can now use the finetuned model for inference:
@@ -159,7 +189,8 @@ video = pipe("<my-awesome-prompt>").frames[0]
 export_to_video(video, "output.mp4", fps=8)
 ```
 
-You can refer to the following guides to know more about performing LoRA inference in `diffusers`:
+You can refer to the following guides to know more about the model pipeline and performing LoRA inference in `diffusers`:
 
+* [LTX-Video in Diffusers](https://huggingface.co/docs/diffusers/main/en/api/pipelines/ltx_video)
 * [Load LoRAs for inference](https://huggingface.co/docs/diffusers/main/en/tutorials/using_peft_for_inference)
 * [Merge LoRAs](https://huggingface.co/docs/diffusers/main/en/using-diffusers/merge_loras)

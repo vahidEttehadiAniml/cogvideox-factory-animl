@@ -2,6 +2,8 @@
 
 ## Training
 
+For LoRA training, specify `--training_type lora`. For full finetuning, specify `--training_type full-finetune`.
+
 ```bash
 #!/bin/bash
 
@@ -40,7 +42,6 @@ diffusion_cmd=""
 # Training arguments
 training_cmd="--training_type lora \
   --seed 42 \
-  --mixed_precision bf16 \
   --batch_size 1 \
   --train_steps 500 \
   --rank 128 \
@@ -86,6 +87,12 @@ echo -ne "-------------------- Finished executing script --------------------\n\
 ```
 
 ## Memory Usage
+
+### LoRA
+
+> [!NOTE]
+>
+> The below measurements are done in `torch.bfloat16` precision. Memory usage can further be reduce by passing `--layerwise_upcasting_modules transformer` to the training script. This will cast the model weights to `torch.float8_e4m3fn` or `torch.float8_e5m2`, which halves the memory requirement for model weights. Computation is performed in the dtype set by `--transformer_dtype` (which defaults to `bf16`).
 
 LoRA with rank 128, batch size 1, gradient checkpointing, optimizer adamw, `49x512x768` resolutions, **without precomputation**:
 
@@ -139,6 +146,10 @@ Training configuration: {
 
 Note: requires about `47` GB of VRAM with validation. If validation is not performed, the memory usage is reduced to about `42` GB.
 
+### Full finetuning
+
+Current, full finetuning is not supported for HunyuanVideo. It goes out of memory (OOM) for `49x512x768` resolutions.
+
 ## Inference
 
 Assuming your LoRA is saved and pushed to the HF Hub, and named `my-awesome-name/my-awesome-lora`, we can now use the finetuned model for inference:
@@ -171,7 +182,8 @@ output = pipe(
 export_to_video(output, "output.mp4", fps=15)
 ```
 
-You can refer to the following guides to know more about performing LoRA inference in `diffusers`:
+You can refer to the following guides to know more about the model pipeline and performing LoRA inference in `diffusers`:
 
+* [Hunyuan-Video in Diffusers](https://huggingface.co/docs/diffusers/main/api/pipelines/hunyuan_video)
 * [Load LoRAs for inference](https://huggingface.co/docs/diffusers/main/en/tutorials/using_peft_for_inference)
 * [Merge LoRAs](https://huggingface.co/docs/diffusers/main/en/using-diffusers/merge_loras)
