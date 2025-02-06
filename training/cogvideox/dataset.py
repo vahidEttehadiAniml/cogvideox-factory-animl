@@ -127,8 +127,6 @@ class VideoDataset(Dataset):
             if latent_num_frames % 2 == 0:
                 num_frames = latent_num_frames * 4
             else:
-                image_latents = image_latents[:,:-1]
-                video_latents = video_latents[:,:-1]
                 num_frames = (latent_num_frames - 1) * 4 + 1
 
             height = video_latents.size(2) * 8
@@ -288,9 +286,7 @@ class VideoDatasetWithResizing(VideoDataset):
         else:
             video_reader = decord.VideoReader(uri=path.as_posix())
             video_num_frames = len(video_reader)
-            nearest_frame_bucket = min(
-                self.frame_buckets, key=lambda x: abs(x - min(video_num_frames, self.max_num_frames))
-            )
+            nearest_frame_bucket = min(self.frame_buckets, key=lambda x: abs(x - min(video_num_frames, self.max_num_frames)))
 
             frame_indices = list(range(0, video_num_frames, video_num_frames // nearest_frame_bucket))
 
@@ -306,12 +302,6 @@ class VideoDatasetWithResizing(VideoDataset):
             if self.image_to_video:
                 cond_path = str(path).replace('videos','conditions')
                 video_reader = decord.VideoReader(uri=Path(cond_path).as_posix())
-                video_num_frames = len(video_reader)
-                nearest_frame_bucket = min(
-                    self.frame_buckets, key=lambda x: abs(x - min(video_num_frames, self.max_num_frames))
-                )
-
-                frame_indices = list(range(0, video_num_frames, video_num_frames // nearest_frame_bucket))
 
                 cond_frames = video_reader.get_batch(frame_indices)
                 cond_frames = cond_frames[:nearest_frame_bucket].float()

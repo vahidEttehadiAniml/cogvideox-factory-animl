@@ -1,20 +1,21 @@
 #!/bin/bash
 
-MODEL_ID="THUDM/CogVideoX1.5-5B-I2V"
+#MODEL_ID="/media/vahid/DATA/projects/CogVideo/models/CogVideoX1.5-5B-I2V"
+MODEL_ID="THUDM/CogVideoX-5b-I2V"
 
 NUM_GPUS=8
 
 # For more details on the expected data format, please refer to the README.
-DATA_ROOT="/mnt/data/cogvid_preproc_bottom"  # This needs to be the path to the base directory where your videos are located.
-CAPTION_COLUMN="prompt.txt"
-VIDEO_COLUMN="videos.txt"
-OUTPUT_DIR="/mnt/data/cogvid_preproc_bottom_latents"
-#HEIGHT_BUCKETS="480 720"
-#WIDTH_BUCKETS="720 960"
-HEIGHT_BUCKETS="1024"
-WIDTH_BUCKETS="1024"
-FRAME_BUCKETS="29"
-MAX_NUM_FRAMES="29"
+DATA_ROOT="/media/vahid/DATA/data/animl_data/cogvid_preproc_merged"  # This needs to be the path to the base directory where your videos are located.
+CAPTION_COLUMN="prompt_1k.txt"
+VIDEO_COLUMN="videos_1k.txt"
+OUTPUT_DIR="/media/vahid/DATA/data/animl_data/cogvid_preproc_merged_latents_1280x960_49f_v1"
+HEIGHT_BUCKETS="960"
+WIDTH_BUCKETS="1280"
+#HEIGHT_BUCKETS="480"
+#WIDTH_BUCKETS="720"
+FRAME_BUCKETS="9"
+MAX_NUM_FRAMES="9"
 MAX_SEQUENCE_LENGTH=226
 TARGET_FPS=8
 BATCH_SIZE=8
@@ -24,7 +25,7 @@ DTYPE=fp16
 # For Image-to-Video finetuning, make sure to pass `--save_image_latents`
 CMD_WITHOUT_PRE_ENCODING="\
   torchrun --nproc_per_node=$NUM_GPUS \
-    training/prepare_dataset_dev.py \
+    training/cogvideox/prepare_dataset_dev.py \
       --model_id $MODEL_ID \
       --data_root $DATA_ROOT \
       --caption_column $CAPTION_COLUMN \

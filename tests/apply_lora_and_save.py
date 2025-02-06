@@ -4,19 +4,22 @@ from diffusers import CogVideoXFramesToVideoPipeline
 
 
 
-model_path = "THUDM/CogVideoX1.5-5B-I2V"
-save_path = "/data/cogvideox-factory-animl/ckpt/CogVideoX1.5-5B-I2V_guide"
+model_path = "THUDM/CogVideoX-5b-I2V"
+save_path = "/data/cogvideox-factory-animl/ckpt/CogVideoX-5b-I2V_guide"
 
-pipe = CogVideoXFramesToVideoPipeline.from_pretrained(model_path, torch_dtype=torch.bfloat16).to('cuda')
+# model_path = "/media/vahid/DATA/projects/CogVideo/models/CogVideoX1.5-5B-I2V"
+# save_path = f"{model_path}_last"
 
-lora_path = "/data/cogvideox-factory-animl/runs/cogvideox-lora_v1-fast__steps_9000__learning-rate_1e-5/checkpoint-9500"
-lora_name = "pytorch_lora_weights.safetensors"
+pipe = CogVideoXFramesToVideoPipeline.from_pretrained(model_path, torch_dtype=torch.bfloat16)
+
+lora_path = "/data/cogvideox-factory-animl/loras_weights"
+lora_name = "v1_guide_49f_2750.safetensors"
 
 lora_scaling = 1.0
 
-pipe.load_lora_weights(lora_path, weight_name=lora_name, adapter_name="test_1")
-pipe.set_adapters(["test_1"], [lora_scaling])
-pipe.fuse_lora(adapter_names=["test_1"], lora_scale=lora_scaling)
+pipe.load_lora_weights(lora_path, weight_name=lora_name, adapter_name="guide")
+pipe.set_adapters(["guide"], [lora_scaling])
+pipe.fuse_lora(adapter_names=["guide"], lora_scale=lora_scaling)
 pipe.unload_lora_weights()
 
 pipe.save_pretrained(f"{save_path}")
