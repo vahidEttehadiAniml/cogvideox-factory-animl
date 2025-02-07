@@ -767,9 +767,10 @@ def main(args):
 
                 if random.random() < args.condition_frames_dropout:
                     drop_latent = torch.zeros_like(image_latents)
-                    mid_ind = image_latents.shape[1] // 2
-                    drop_latent[:, mid_ind] = image_latents[:, mid_ind] * 1.0
-                    image_latents[:, 1:-1] = drop_latent[:, 1:-1]
+                    num_samples = torch.randint(1, image_latents.shape[1], (1,)).item()
+                    guided_ind = torch.randperm(image_latents.shape[1])[:num_samples]
+                    drop_latent[:, guided_ind] = image_latents[:, guided_ind] * 1.0
+                    image_latents[:, 1:] = drop_latent[:, 1:]
 
                 if args.add_last_frame:
                     image_latents[:, -1] = video_latents[:, -1].clone()
