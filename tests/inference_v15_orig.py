@@ -138,7 +138,7 @@ prompt = "A nice sneaker on the some rocks with a background of an active volcan
 # prompt = "A nice sneaker on the betonic with a background of a modern city while camera trajectory rotate around sneaker, ultrarealistic detail and breath-taking movie-like camera shot."
 negative_prompt = 'blurry, low-quality'
 
-vid_path = f'/home/vahid/Downloads/Professional_Mode_beautiful_rotation_around_the_sn.mp4'
+vid_path = f'/home/vahid/Downloads/Professional_Mode_A_cinematic_360_degree_dolly_sh.mp4'
 # vid_path = f'/home/vahid/Downloads/fd03b8c9-fd6f-48b0-8eec-55ff5db6e7d1_video.mp4'
 
 

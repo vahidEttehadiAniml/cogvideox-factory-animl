@@ -5,9 +5,9 @@ import numpy as np
 from sympy.codegen.ast import continue_
 
 source_folder = '/media/vahid/DATA/projects/splatting_pipeline/animl_data/generated_video_data'
-preproc_path = '/media/vahid/DATA/data/animl_data/generated_video_data_interpolated_processed_'
+preproc_path = '/media/vahid/DATA/data/animl_data/generated_video_data_interpolated_processed'
 caption_dir = '/media/vahid/DATA/data/animl_data/generated_video_data_processed'
-cogvid_data_path = '/media/vahid/DATA/data/animl_data/cogvid_preproc_interpolate_'
+cogvid_data_path = '/media/vahid/DATA/data/animl_data/cogvid_preproc_interpolate'
 os.makedirs(preproc_path, exist_ok=True)
 
 
@@ -37,6 +37,7 @@ def add_noise_to_frame(frame, noise_type="gaussian", amplitude=10):
     else:
         raise ValueError("Invalid noise_type. Choose 'gaussian' or 'blur'.")
     return noisy_frame
+
 
 def process_video_with_noise(input_video_path, output_video_path, noise_type="blur", amplitude=10):
     """
@@ -80,7 +81,6 @@ def process_video_with_noise(input_video_path, output_video_path, noise_type="bl
     # Release resources
     cap.release()
     out.release()
-
 
 
 def save_list_to_txt(file_path, string_list):
@@ -175,12 +175,12 @@ def process_object(obj_name):
                     if not os.path.isfile(vid_path):
                         continue
 
-                    new_vid_path = f"{video_dir}/{obj_name[-6:]}_{cnt:02d}_gs_{traj_name}.mp4"
-                    new_vid_rev_path = f"{video_dir}/{obj_name[-6:]}_{cnt:02d}_gs_{traj_name}_rev.mp4"
+                    new_vid_path = f"{video_dir}/{obj_name[-5:]}_{cnt:02d}_gs_{traj_name}.mp4"
+                    new_vid_rev_path = f"{video_dir}/{obj_name[-5:]}_{cnt:02d}_gs_{traj_name}_rev.mp4"
 
                     vid_cond_path = f"{obj_dir}/video_gen_data/{traj}/grm.mp4"
-                    new_vid_cond_path = f"{video_cond_dir}/{obj_name[-6:]}_{cnt:02d}_gs_{traj_name}.mp4"
-                    new_vid_cond_rev_path = f"{video_cond_dir}/{obj_name[-6:]}_{cnt:02d}_gs_{traj_name}_rev.mp4"
+                    new_vid_cond_path = f"{video_cond_dir}/{obj_name[-5:]}_{cnt:02d}_gs_{traj_name}.mp4"
+                    new_vid_cond_rev_path = f"{video_cond_dir}/{obj_name[-5:]}_{cnt:02d}_gs_{traj_name}_rev.mp4"
 
                     if 'Camera trajectory is toward the bottom.' in caption or True:
                         if not os.path.isfile(new_vid_path):
@@ -192,15 +192,14 @@ def process_object(obj_name):
                                 noise_amp = np.random.randint(50, 100)
                                 process_video_with_noise(new_vid_path, new_vid_cond_path, noise_type="blur", amplitude=noise_amp)
 
-                        if os.path.isfile(new_vid_path):
-                            metadata.append({
-                                'video': new_vid_path.replace(cogvid_data_path, '')[1:],
-                                'text': caption,
-                                'condition': new_vid_cond_path.replace(cogvid_data_path, '')[1:],
-                            })
+                    if os.path.isfile(new_vid_path):
+                        metadata.append({
+                            'video': new_vid_path.replace(cogvid_data_path, '')[1:],
+                            'text': caption,
+                            'condition': new_vid_cond_path.replace(cogvid_data_path, '')[1:],
+                        })
 
-                    if not os.path.isfile(new_vid_rev_path):
-                    # if 'Camera trajectory is toward the bottom.' in caption or True:
+                    if 'Camera trajectory is toward the bottom.' in caption or True:
                         if not os.path.isfile(new_vid_rev_path):
                             reverse_video(vid_path, new_vid_rev_path)
                         if not os.path.isfile(new_vid_cond_rev_path):
@@ -210,14 +209,17 @@ def process_object(obj_name):
                                 noise_amp = np.random.randint(50, 100)
                                 process_video_with_noise(new_vid_rev_path, new_vid_cond_rev_path, noise_type="blur", amplitude=noise_amp)
 
-                        if os.path.isfile(new_vid_rev_path):
-                            metadata.append({
-                                'video': new_vid_rev_path.replace(cogvid_data_path, '')[1:],
-                                'text': caption,
-                                'condition': new_vid_cond_rev_path.replace(cogvid_data_path, '')[1:],
-                            })
+                    if os.path.isfile(new_vid_rev_path):
+                        metadata.append({
+                            'video': new_vid_rev_path.replace(cogvid_data_path, '')[1:],
+                            'text': caption,
+                            'condition': new_vid_cond_rev_path.replace(cogvid_data_path, '')[1:],
+                        })
 
     return metadata
+
+
+
 
 
 # Main script
