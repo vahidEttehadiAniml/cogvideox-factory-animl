@@ -1,8 +1,8 @@
 # finetrainers 🧪
 
-`cogvideox-factory` was renamed to `finetrainers`. If you're looking to train CogVideoX or Mochi with the legacy training scripts, please refer to [this](./training/README.md) README instead. Everything in the `training/` directory will be eventually moved and supported under `finetrainers`.
-
 FineTrainers is a work-in-progress library to support (accessible) training of video models. Our first priority is to support LoRA training for all popular video models in [Diffusers](https://github.com/huggingface/diffusers), and eventually other methods like controlnets, control-loras, distillation, etc.
+
+`cogvideox-factory` was renamed to `finetrainers`. If you're looking to train CogVideoX or Mochi with the legacy training scripts, please refer to [this](./training/README.md) README instead. Everything in the `training/` directory will be eventually moved and supported under `finetrainers`.
 
 <table align="center">
 <tr>
@@ -12,142 +12,88 @@ FineTrainers is a work-in-progress library to support (accessible) training of v
 
 ## News
 
-- 🔥 **2024-12-20**: Support for T2V LoRA finetuning of [CogVideoX](https://huggingface.co/docs/diffusers/main/api/pipelines/cogvideox) added! 
+- 🔥 **2025-03-03**: Wan T2V support added!
+- 🔥 **2025-03-03**: We have shipped a complete refactor to support multi-backend distributed training, better precomputation handling for big datasets, model specification format (externally usable for training custom models), FSDP & more.
+- 🔥 **2025-02-12**: We have shipped a set of tooling to curate small and high-quality video datasets for fine-tuning. See [video-dataset-scripts](https://github.com/huggingface/video-dataset-scripts) documentation page for details!
+- 🔥 **2025-02-12**: Check out [eisneim/ltx_lora_training_i2v_t2v](https://github.com/eisneim/ltx_lora_training_i2v_t2v/)! It builds off of `finetrainers` to support image to video training for LTX-Video and STG guidance for inference.
+- 🔥 **2025-01-15**: Support for naive FP8 weight-casting training added! This allows training HunyuanVideo in under 24 GB upto specific resolutions.
+- 🔥 **2025-01-13**: Support for T2V full-finetuning added! Thanks to [@ArEnSc](https://github.com/ArEnSc) for taking up the initiative!
+- 🔥 **2025-01-03**: Support for T2V LoRA finetuning of [CogVideoX](https://huggingface.co/docs/diffusers/main/api/pipelines/cogvideox) added!
 - 🔥 **2024-12-20**: Support for T2V LoRA finetuning of [Hunyuan Video](https://huggingface.co/docs/diffusers/main/api/pipelines/hunyuan_video) added! We would like to thank @SHYuanBest for his work on a training script [here](https://github.com/huggingface/diffusers/pull/10254).
 - 🔥 **2024-12-18**: Support for T2V LoRA finetuning of [LTX Video](https://huggingface.co/docs/diffusers/main/api/pipelines/ltx_video) added!
 
 ## Table of Contents
 
-* [Quickstart](#quickstart)
-* [Support Matrix](#support-matrix)
-* [Acknowledgements](#acknowledgements)
+- [Quickstart](#quickstart)
+- [Support Matrix](#support-matrix)
+- [Featured Projects](#featured-projects)
+- [Acknowledgements](#acknowledgements)
 
 ## Quickstart
 
-Clone the repository and make sure the requirements are installed: `pip install -r requirements.txt` and install `diffusers` from source by `pip install git+https://github.com/huggingface/diffusers`.
+Clone the repository and make sure the requirements are installed: `pip install -r requirements.txt` and install `diffusers` from source by `pip install git+https://github.com/huggingface/diffusers`. The requirements specify `diffusers>=0.32.1`, but it is always recommended to use the `main` branch of Diffusers for the latest features and bugfixes. Note that the `main` branch for `finetrainers` is also the development branch, and stable support should be expected from the release tags.
 
-Then download a dataset:
+Checkout to the latest release tag:
 
 ```bash
-# install `huggingface_hub`
-huggingface-cli download \
-  --repo-type dataset Wild-Heart/Disney-VideoGeneration-Dataset \
-  --local-dir video-dataset-disney
+git fetch --all --tags
+git checkout tags/v0.0.1
 ```
 
-Then launch LoRA fine-tuning. Below we provide an example for LTX-Video. We refer the users to [`docs/training`](./docs/training/) to learn more details.
+Follow the instructions mentioned in the [README](https://github.com/a-r-r-o-w/finetrainers/tree/v0.0.1) for the release tag.
+
+#### Using the main branch
+
+To get started quickly with example training scripts on the main development branch, refer to the following:
+- [LTX-Video Pika Effects Crush](./examples/training/sft/ltx_video/crush_smol_lora/)
+- [CogVideoX Pika Effects Crush](./examples/training/sft/cogvideox/crush_smol_lora/)
+- [Wan T2V Pika Effects Crush](./examples/training/sft/wan/crush_smol_lora/)
+
+The following are some simple datasets/HF orgs with good datasets to test training with quickly:
+- [Disney Video Generation Dataset](https://huggingface.co/datasets/Wild-Heart/Disney-VideoGeneration-Dataset)
+- [bigdatapw Video Dataset Collection](https://huggingface.co/bigdata-pw)
+- [Finetrainers HF Dataset Collection](https://huggingface.co/finetrainers)
+
+Please checkout [`docs/models`](./docs/models/) and [`examples/training`](./examples/training/) to learn more about supported models for training & example reproducible training launch scripts.
 
 > [!IMPORTANT] 
-> It is recommended to use Pytorch 2.5.1 or above for training. Previous versions can lead to completely black videos, OOM errors, or other issues and are not tested.
-
-<details>
-<summary>Training command</summary>
-
-```bash
-#!/bin/bash
-export WANDB_MODE="offline"
-export NCCL_P2P_DISABLE=1
-export TORCH_NCCL_ENABLE_MONITORING=0
-export FINETRAINERS_LOG_LEVEL=DEBUG
-
-GPU_IDS="0,1"
-
-DATA_ROOT="/path/to/video-dataset-disney"
-CAPTION_COLUMN="prompts.txt"
-VIDEO_COLUMN="videos.txt"
-OUTPUT_DIR="/path/to/output/directory/ltx-video/ltxv_disney"
-
-ID_TOKEN="BW_STYLE"
-
-# Model arguments
-model_cmd="--model_name ltx_video \
-  --pretrained_model_name_or_path Lightricks/LTX-Video"
-
-# Dataset arguments
-dataset_cmd="--data_root $DATA_ROOT \
-  --video_column $VIDEO_COLUMN \
-  --caption_column $CAPTION_COLUMN \
-  --id_token $ID_TOKEN \
-  --video_resolution_buckets 49x512x768 \
-  --caption_dropout_p 0.05"
-
-# Dataloader arguments
-dataloader_cmd="--dataloader_num_workers 0"
-
-# Diffusion arguments
-diffusion_cmd="--flow_resolution_shifting"
-
-# Training arguments
-training_cmd="--training_type lora \
-  --seed 42 \
-  --mixed_precision bf16 \
-  --batch_size 1 \
-  --train_steps 1200 \
-  --rank 128 \
-  --lora_alpha 128 \
-  --target_modules to_q to_k to_v to_out.0 \
-  --gradient_accumulation_steps 1 \
-  --gradient_checkpointing \
-  --checkpointing_steps 500 \
-  --checkpointing_limit 2 \
-  --enable_slicing \
-  --enable_tiling"
-
-# Optimizer arguments
-optimizer_cmd="--optimizer adamw \
-  --lr 3e-5 \
-  --lr_scheduler constant_with_warmup \
-  --lr_warmup_steps 100 \
-  --lr_num_cycles 1 \
-  --beta1 0.9 \
-  --beta2 0.95 \
-  --weight_decay 1e-4 \
-  --epsilon 1e-8 \
-  --max_grad_norm 1.0"
-
-# Miscellaneous arguments
-miscellaneous_cmd="--tracker_name finetrainers-ltxv \
-  --output_dir $OUTPUT_DIR \
-  --nccl_timeout 1800 \
-  --report_to wandb"
-
-cmd="accelerate launch --config_file accelerate_configs/uncompiled_2.yaml --gpu_ids $GPU_IDS train.py \
-  $model_cmd \
-  $dataset_cmd \
-  $dataloader_cmd \
-  $diffusion_cmd \
-  $training_cmd \
-  $optimizer_cmd \
-  $miscellaneous_cmd"
-
-echo "Running command: $cmd"
-eval $cmd
-echo -ne "-------------------- Finished executing script --------------------\n\n"
-```
-
-</details>
-
-Here we are using two GPUs. But one can do single-GPU training by setting `GPU_IDS=0`. By default, we are using some simple optimizations to reduce memory consumption (such as gradient checkpointing). Please refer to [docs/training/optimizations](./docs/training/optimization.md) to learn about the memory optimizations currently supported.
-
-For inference, refer [here](./docs/training/ltx_video.md#inference). For docs related to the other supported model, refer [here](./docs/training/).
+> It is recommended to use Pytorch 2.5.1 or above for training. Previous versions can lead to completely black videos, OOM errors, or other issues and are not tested. For fully reproducible training, please use the same environment as mentioned in [environment.md](./docs/environment.md).
 
 ## Support Matrix
 
+> [!NOTE]
+> The following numbers were obtained from the [release branch](https://github.com/a-r-r-o-w/finetrainers/tree/v0.0.1). The `main` branch is unstable at the moment and may use higher memory.
+
 <div align="center">
 
-| Model Name | Tasks                | Ckpts Tested                                                                                                                                         | Min. GPU<br>VRAM | Comments                                                     |
-|:------------:|:---------------------:|:------------------------------------------------------------------------------------------------------------------------------------------------------:|:----------------------:|:--------------------------------------------------------------:|
-| [LTX-Video](https://huggingface.co/docs/diffusers/main/api/pipelines/ltx_video) | <ul><li>T2V ✅</li><li> I2V ❌</li></ul> | [Lightricks/LTX-Video](https://huggingface.co/Lightricks/LTX-Video)                                                                                 | 11 GB                | Fast to train                                                 |
-| [HunyuanVideo](https://huggingface.co/docs/diffusers/main/api/pipelines/hunyuan_video) | <ul><li>T2V ✅</li><li> I2V ❌</li></ul> | [tencent/HunyuanVideo](https://huggingface.co/tencent/HunyuanVideo)                                                                                 | 42 GB                 | -                                                            |
-| [CogVideoX](https://huggingface.co/docs/diffusers/main/api/pipelines/cogvideox) | <ul><li>T2V ✅</li><li> I2V ❌</li></ul> | <ul><li>[THUDM/CogVideoX1.5-5B](https://huggingface.co/THUDM/CogVideoX1.5-5B)</li><li>[THUDM/CogVideoX-5b](https://huggingface.co/THUDM/CogVideoX-5b)</li><li>[THUDM/CogVideoX-2b](https://huggingface.co/THUDM/CogVideoX-2b)</li> | - GB                 | Training with multi-bucket, multi-resolution frames is supported. |
+| **Model Name**                                 | **Tasks**     | **Min. LoRA VRAM<sup>*</sup>**     | **Min. Full Finetuning VRAM<sup>^</sup>**     |
+|:----------------------------------------------:|:-------------:|:----------------------------------:|:---------------------------------------------:|
+| [LTX-Video](./docs/models/ltx_video.md)        | Text-to-Video | 5 GB                               | 21 GB                                         |
+| [HunyuanVideo](./docs/models/hunyuan_video.md) | Text-to-Video | 32 GB                              | OOM                                           |
+| [CogVideoX-5b](./docs/models/cogvideox.md)     | Text-to-Video | 18 GB                              | 53 GB                                         |
+| [Wan](./docs/models/wan.md)                    | Text-to-Video | TODO                               | TODO                                          |
 
 </div>
 
-Note that the memory consumption in the table is reported with most of the options, discussed in [docs/training/optimizations](./docs/training/optimization.md), enabled.
+<sub><sup>*</sup>Noted for training-only, no validation, at resolution `49x512x768`, rank 128, with pre-computation, using **FP8** weights & gradient checkpointing. Pre-computation of conditions and latents may require higher limits (but typically under 16 GB).</sub><br/>
+<sub><sup>^</sup>Noted for training-only, no validation, at resolution `49x512x768`, with pre-computation, using **BF16** weights & gradient checkpointing.</sub>
 
 If you would like to use a custom dataset, refer to the dataset preparation guide [here](./docs/dataset/README.md).
 
+## Featured Projects 🔥
+
+Checkout some amazing projects citing `finetrainers`:
+- [Diffusion as Shader](https://github.com/IGL-HKUST/DiffusionAsShader)
+- [SkyworkAI's SkyReels-A1](https://github.com/SkyworkAI/SkyReels-A1)
+- [eisneim's LTX Image-to-Video](https://github.com/eisneim/ltx_lora_training_i2v_t2v/)
+- [wileewang's TransPixar](https://github.com/wileewang/TransPixar)
+- [Feizc's Video-In-Context](https://github.com/feizc/Video-In-Context)
+
+Checkout the following UIs built for `finetrainers`:
+- [jbilcke's VideoModelStudio](https://github.com/jbilcke-hf/VideoModelStudio)
+- [neph1's finetrainers-ui](https://github.com/neph1/finetrainers-ui)
+
 ## Acknowledgements
 
-* `finetrainers` builds on top of a body of great open-source libraries: `transformers`, `accelerate`, `peft`, `diffusers`, `bitsandbytes`, `torchao`, `deepspeed` -- to name a few.
+* `finetrainers` builds on top of & takes inspiration from great open-source libraries - `transformers`, `accelerate`, `torchtune`, `torchtitan`, `peft`, `diffusers`, `bitsandbytes`, `torchao` and `deepspeed` - to name a few.
 * Some of the design choices of `finetrainers` were inspired by [`SimpleTuner`](https://github.com/bghira/SimpleTuner).
